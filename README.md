@@ -1,6 +1,9 @@
 # 🎓 Assistente de Matrícula UFABC — BCC (PPC 2023)
 
-Ferramenta **100% local** para facilitar a montagem da grade quadrimestral da UFABC (Bacharelado em Ciência da Computação — Matriz 2023), cruzando automaticamente:
+🌐 **Acesse direto no navegador (sem instalar nada):**
+👉 **[https://joao-guilherme298.github.io/Assistente-de-Matricula-UFABC/](https://joao-guilherme298.github.io/Assistente-de-Matricula-UFABC/)**
+
+Ferramenta **100% local e privada** para facilitar a montagem da grade quadrimestral da UFABC (Bacharelado em Ciência da Computação — Matriz 2023), cruzando automaticamente:
 
 - **Turmas Ofertadas** do quadrimestre ([PROGRAD Matrículas](https://prograd.ufabc.edu.br/matriculas))
 - **Catálogo de Disciplinas** mais recente ([PROGRAD Catálogos](https://prograd.ufabc.edu.br/catalogos-de-disciplinas)) para checar **recomendações (pré-requisitos)**

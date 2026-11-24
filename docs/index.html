@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assistente de Matrícula UFABC — BCC</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>🎓 Assistente de Matrícula UFABC — BCC (PPC 2023)</h1>
+      <p id="metaInfo">Carregando base pública da PROGRAD...</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" id="btnAbrirHistorico">🔒 Importar Histórico</button>
+      <button class="btn-secondary" id="btnVerPendentes">📋 Ver Obrigatórias Pendentes</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Obrigatórias BCC</div>
+        <div class="value" id="statBcc">—</div>
+        <div class="sub" id="statBccSub">Importe seu histórico para ver o progresso</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Obrigatórias BC&amp;T</div>
+        <div class="value" id="statBct">—</div>
+        <div class="sub" id="statBctSub">Base interdisciplinar</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Opções Limitadas</div>
+        <div class="value" id="statOl">—</div>
+        <div class="sub">Disciplinas do rol BCC cursadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Grade Montada</div>
+        <div class="value" id="statGrade">Plano A: 0 turmas</div>
+        <div class="sub" id="statCreditos">0 créditos selecionados</div>
+      </div>
+    </section>
+
+    <section class="filters-bar">
+      <div class="field">
+        <label for="fCampus">Campus</label>
+        <select id="fCampus">
+          <option value="Santo André" selected>Santo André</option>
+          <option value="São Bernardo do Campo">São Bernardo do Campo</option>
+          <option value="Todos">Todos</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fTurno">Turno</label>
+        <select id="fTurno">
+          <option value="Matutino" selected>Matutino</option>
+          <option value="Noturno">Noturno</option>
+          <option value="Todos">Todos</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fCategoria">Categoria</label>
+        <select id="fCategoria">
+          <option value="Todas">Todas</option>
+          <option value="obrigatoria_bcc">Obrigatórias BCC</option>
+          <option value="obrigatoria_bct">Obrigatórias BC&amp;T</option>
+          <option value="opcao_limitada">Opções Limitadas BCC</option>
+          <option value="livre">Livres / Outras</option>
+        </select>
+      </div>
+      <div class="field grow">
+        <label for="fBusca">Buscar disciplina, código ou docente</label>
+        <input type="text" id="fBusca" placeholder="Ex: Compiladores, MCCC006, Grafos..." />
+      </div>
+      <div class="field">
+        <label>Dias livres / permitidos</label>
+        <div class="dias-pills" id="diasPills">
+          <button type="button" class="dia-pill active" data-dia="segunda">Seg</button>
+          <button type="button" class="dia-pill active" data-dia="terca">Ter</button>
+          <button type="button" class="dia-pill active" data-dia="quarta">Qua</button>
+          <button type="button" class="dia-pill active" data-dia="quinta">Qui</button>
+          <button type="button" class="dia-pill active" data-dia="sexta">Sex</button>
+          <button type="button" class="dia-pill active" data-dia="sabado">Sáb</button>
+        </div>
+      </div>
+      <div class="toggles">
+        <label class="toggle-label">
+          <input type="checkbox" id="fOcultarCursadas" checked />
+          Ocultar já cursadas
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="fContarEmCurso" checked />
+          Contar "em curso" como feitas
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="fApenasRecOk" />
+          Só recomendações OK
+        </label>
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Turmas Ofertadas</h2>
+          <span id="contadorTurmas" style="font-size:0.82rem;color:var(--muted)">0 encontradas</span>
+        </div>
+        <div class="turmas-list" id="listaTurmas"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h2>Grade Semanal</h2>
+            <div class="plan-tabs" id="planTabs">
+              <button type="button" class="plan-tab active" data-plan="A">Plano A</button>
+              <button type="button" class="plan-tab" data-plan="B">Plano B</button>
+              <button type="button" class="plan-tab" data-plan="C">Plano C</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn-secondary btn-sm" id="btnAbrirSugerir">✨ Sugerir grade</button>
+            <button class="btn-primary btn-sm" id="btnCopiarCodigos">📋 Copiar</button>
+            <button class="btn-danger btn-sm" id="btnLimparGrade">Limpar</button>
+          </div>
+        </div>
+        <div class="schedule-wrap">
+          <table class="schedule-table" id="gradeSemanal"></table>
+        </div>
+        <div class="selected-list" id="listaSelecionadas"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Importar Histórico -->
+  <div class="modal-backdrop" id="modalHistorico">
+    <div class="modal">
+      <h3>🔒 Importar Histórico Escolar (100% no Navegador)</h3>
+      <div class="privacy-note">
+        <strong>Privacidade total:</strong> Este site não tem servidor. Seu PDF é lido localmente dentro da sua própria aba do navegador —
+        <strong>nenhum dado sai do seu computador</strong>. Nome, CPF, RG e RA são descartados imediatamente;
+        apenas os códigos das matérias cursadas ficam salvos no <code>localStorage</code> do seu navegador.
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:0.84rem;font-weight:600;margin-bottom:6px;">
+          Opção 1 — Selecionar PDF do Histórico (SIGAA UFABC)
+        </label>
+        <input type="file" id="inputPdfHistorico" accept="application/pdf" />
+        <button class="btn-primary btn-sm" id="btnEnviarPdf" style="margin-top:8px;">Processar PDF</button>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;" />
+
+      <div>
+        <label style="display:block;font-size:0.84rem;font-weight:600;margin-bottom:6px;">
+          Opção 2 — Colar apenas as disciplinas (sem enviar o PDF)
+        </label>
+        <textarea id="inputTextoHistorico" placeholder="Cole aqui as linhas de disciplinas do seu histórico..."></textarea>
+        <button class="btn-secondary btn-sm" id="btnEnviarTexto" style="margin-top:8px;">Processar Texto</button>
+      </div>
+
+      <div id="historicoStatusModal" style="margin-top:12px;font-size:0.82rem;color:var(--muted);"></div>
+
+      <div class="modal-footer">
+        <button class="btn-danger btn-sm" id="btnRemoverHistorico">Apagar histórico salvo</button>
+        <button class="btn-secondary" id="btnFecharHistorico">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Obrigatórias Pendentes -->
+  <div class="modal-backdrop" id="modalPendentes">
+    <div class="modal">
+      <h3>📋 Disciplinas Obrigatórias Pendentes</h3>
+      <div id="conteudoPendentes" style="font-size:0.85rem;margin-top:10px;"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnFecharPendentes">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Sugerir Grade -->
+  <div class="modal-backdrop" id="modalSugerir">
+    <div class="modal">
+      <h3>✨ Sugerir Grade Automática</h3>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">
+        Monta combinações sem conflito usando seus filtros atuais (campus, turno e dias selecionados), priorizando obrigatórias do BCC e matérias que destravam mais disciplinas futuras.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+        <div class="field">
+          <label for="sugMinCred">Mín. créditos</label>
+          <input type="text" id="sugMinCred" value="12" style="min-width:0;" />
+        </div>
+        <div class="field">
+          <label for="sugMaxCred">Máx. créditos</label>
+          <input type="text" id="sugMaxCred" value="20" style="min-width:0;" />
+        </div>
+        <div class="field">
+          <label for="sugMaxDisc">Máx. matérias</label>
+          <input type="text" id="sugMaxDisc" value="5" style="min-width:0;" />
+        </div>
+      </div>
+      <label class="toggle-label" style="margin-bottom:8px;">
+        <input type="checkbox" id="sugSoRecOk" checked />
+        Somente matérias com recomendações cumpridas
+      </label>
+      <label class="toggle-label" style="margin-bottom:12px;">
+        <input type="checkbox" id="sugCompletarLeves" />
+        Completar créditos restantes com livres/limitadas mais leves (sem pré-requisitos)
+      </label>
+      <button class="btn-primary" id="btnGerarSugestoes">Gerar opções</button>
+      <div id="resultadoSugestoes" style="margin-top:12px;"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnFecharSugerir">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
