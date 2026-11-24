@@ -1,0 +1,994 @@
+[
+  {
+    "codigo": "BIS0005-15",
+    "nome": "Bases Computacionais da Ciência",
+    "nome_norm": "bases computacionais da ciencia",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "BIR0004-15",
+    "nome": "Bases Epistemológicas da Ciência Moderna",
+    "nome_norm": "bases epistemologicas da ciencia moderna",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BCS0001-15",
+    "nome": "Base Experimental das Ciências Naturais",
+    "nome_norm": "base experimental das ciencias naturais",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BIS0003-15",
+    "nome": "Bases Matemáticas",
+    "nome_norm": "bases matematicas",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "BCL0306-15",
+    "nome": "Biodiversidade: Interações entre Organismos e Ambiente",
+    "nome_norm": "biodiversidade interacoes entre organismos e ambiente",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BCL0308-15",
+    "nome": "Bioquímica: estrutura, propriedade e funções de biomoléculas",
+    "nome_norm": "bioquimica estrutura propriedade e funcoes de biomoleculas",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 5
+  },
+  {
+    "codigo": "BIR0603-15",
+    "nome": "Ciência Tecnologia e Sociedade",
+    "nome_norm": "ciencia tecnologia e sociedade",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BCM0506-15",
+    "nome": "Comunicação e Redes",
+    "nome_norm": "comunicacao e redes",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BIK0102-15",
+    "nome": "Estrutura da Matéria",
+    "nome_norm": "estrutura da materia",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BIQ0602-15",
+    "nome": "Estrutura e Dinâmica Social",
+    "nome_norm": "estrutura e dinamica social",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BIL0304-15",
+    "nome": "Evolução e Diversificação da Vida na Terra",
+    "nome_norm": "evolucao e diversificacao da vida na terra",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BCJ0203-15",
+    "nome": "Fenômenos Eletromagnéticos",
+    "nome_norm": "fenomenos eletromagneticos",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 5
+  },
+  {
+    "codigo": "BCJ0204-15",
+    "nome": "Fenômenos Mecânicos",
+    "nome_norm": "fenomenos mecanicos",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 5
+  },
+  {
+    "codigo": "BCJ0205-15",
+    "nome": "Fenômenos Térmicos",
+    "nome_norm": "fenomenos termicos",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "BCK0103-15",
+    "nome": "Física Quântica",
+    "nome_norm": "fisica quantica",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BCN0402-15",
+    "nome": "Funções de Uma Variável",
+    "nome_norm": "funcoes de uma variavel",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "BCN0407-15",
+    "nome": "Funções de Várias Variáveis",
+    "nome_norm": "funcoes de varias variaveis",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "BCN0404-15",
+    "nome": "Geometria Analítica",
+    "nome_norm": "geometria analitica",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BIN0406-15",
+    "nome": "Introdução à Probabilidade e à Estatística",
+    "nome_norm": "introducao a probabilidade e a estatistica",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BCN0405-15",
+    "nome": "Introdução às Equações Diferenciais Ordinárias",
+    "nome_norm": "introducao as equacoes diferenciais ordinarias",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "BCM0504-15",
+    "nome": "Natureza da Informação",
+    "nome_norm": "natureza da informacao",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "BCM0505-22",
+    "nome": "Processamento da Informação",
+    "nome_norm": "processamento da informacao",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "BCS0002-15",
+    "nome": "Projeto Dirigido",
+    "nome_norm": "projeto dirigido",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "BCL0307-15",
+    "nome": "Transformações Químicas",
+    "nome_norm": "transformacoes quimicas",
+    "categoria": "obrigatoria_bct",
+    "quadrimestre_ideal": null,
+    "creditos": 5
+  },
+  {
+    "codigo": "MCTB001-17",
+    "nome": "Álgebra Linear",
+    "nome_norm": "algebra linear",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 6
+  },
+  {
+    "codigo": "MCCC001-23",
+    "nome": "Algoritmos e Estruturas de Dados I",
+    "nome_norm": "algoritmos e estruturas de dados i",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC002-23",
+    "nome": "Algoritmos e Estruturas de Dados II",
+    "nome_norm": "algoritmos e estruturas de dados ii",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC003-23",
+    "nome": "Algoritmos em Grafos",
+    "nome_norm": "algoritmos em grafos",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC004-23",
+    "nome": "Análise de Algoritmos I",
+    "nome_norm": "analise de algoritmos i",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC005-23",
+    "nome": "Análise de Algoritmos II",
+    "nome_norm": "analise de algoritmos ii",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA004-17",
+    "nome": "Arquitetura de Computadores",
+    "nome_norm": "arquitetura de computadores",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA006-17",
+    "nome": "Circuitos Digitais",
+    "nome_norm": "circuitos digitais",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC006-23",
+    "nome": "Compiladores e Interpretadores",
+    "nome_norm": "compiladores e interpretadores",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC007-23",
+    "nome": "Computação Gráfica",
+    "nome_norm": "computacao grafica",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA009-13",
+    "nome": "Computadores, Ética e Sociedade",
+    "nome_norm": "computadores etica e sociedade",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "MCTA033-15",
+    "nome": "Engenharia de Software",
+    "nome_norm": "engenharia de software",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC008-23",
+    "nome": "Inteligência Artificial",
+    "nome_norm": "inteligencia artificial",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA008-17",
+    "nome": "Interação Humano-Computador",
+    "nome_norm": "interacao humano computador",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC009-23",
+    "nome": "Linguagens Formais e Autômatos",
+    "nome_norm": "linguagens formais e automatos",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCBM006-23",
+    "nome": "Matemática Discreta",
+    "nome_norm": "matematica discreta",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC010-23",
+    "nome": "Matemática Discreta II",
+    "nome_norm": "matematica discreta ii",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC011-23",
+    "nome": "Metodologia e Escrita Científica para Ciência da Computação",
+    "nome_norm": "metodologia e escrita cientifica para ciencia da computacao",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "MCCC012-23",
+    "nome": "Modelagem de Banco de Dados",
+    "nome_norm": "modelagem de banco de dados",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA028-15",
+    "nome": "Programação Estruturada",
+    "nome_norm": "programacao estruturada",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC015-23",
+    "nome": "Programação Funcional",
+    "nome_norm": "programacao funcional",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA018-13",
+    "nome": "Programação Orientada a Objetos",
+    "nome_norm": "programacao orientada a objetos",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA022-17",
+    "nome": "Redes de Computadores",
+    "nome_norm": "redes de computadores",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA023-17",
+    "nome": "Segurança de Dados",
+    "nome_norm": "seguranca de dados",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA024-13",
+    "nome": "Sistemas Digitais",
+    "nome_norm": "sistemas digitais",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA025-13",
+    "nome": "Sistemas Distribuídos",
+    "nome_norm": "sistemas distribuidos",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTA026-13",
+    "nome": "Sistemas Operacionais",
+    "nome_norm": "sistemas operacionais",
+    "categoria": "obrigatoria_bcc",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA035-17",
+    "nome": "Algoritmos Probabilísticos",
+    "nome_norm": "algoritmos probabilisticos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA001-13",
+    "nome": "Análise de Projetos",
+    "nome_norm": "analise de projetos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "MCTB007-17",
+    "nome": "Anéis e Corpos",
+    "nome_norm": "aneis e corpos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA002-17",
+    "nome": "Aprendizado de Máquina",
+    "nome_norm": "aprendizado de maquina",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA003-17",
+    "nome": "Arquitetura de Computadores de Alto Desempenho",
+    "nome_norm": "arquitetura de computadores de alto desempenho",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA004-13",
+    "nome": "Avaliação de Desempenho de Redes",
+    "nome_norm": "avaliacao de desempenho de redes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA005-17",
+    "nome": "Banco de Dados de Apoio à Tomada de Decisão",
+    "nome_norm": "banco de dados de apoio a tomada de decisao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTB009-17",
+    "nome": "Cálculo Numérico",
+    "nome_norm": "calculo numerico",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA037-17",
+    "nome": "Combinatória Extremal",
+    "nome_norm": "combinatoria extremal",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA006-17",
+    "nome": "Computação Evolutiva e Conexionista",
+    "nome_norm": "computacao evolutiva e conexionista",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA053-22",
+    "nome": "Desenvolvimento Guiado por Tipos",
+    "nome_norm": "desenvolvimento guiado por tipos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZG013-17",
+    "nome": "Empreendedorismo",
+    "nome_norm": "empreendedorismo",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA007-13",
+    "nome": "Empreendedorismo e Desenvolvimento de Negócios",
+    "nome_norm": "empreendedorismo e desenvolvimento de negocios",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZI030-17",
+    "nome": "Gerenciamento e Interoperabilidade de Redes",
+    "nome_norm": "gerenciamento e interoperabilidade de redes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA016-17",
+    "nome": "Gestão de projetos de software",
+    "nome_norm": "gestao de projetos de software",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZG019-17",
+    "nome": "Gestão Estratégica e Organizacional",
+    "nome_norm": "gestao estrategica e organizacional",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "MCTB018-17",
+    "nome": "Grupos",
+    "nome_norm": "grupos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZB012-13",
+    "nome": "Inferência Estatística",
+    "nome_norm": "inferencia estatistica",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZI013-17",
+    "nome": "Informática Industrial",
+    "nome_norm": "informatica industrial",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZB022-17",
+    "nome": "Introdução à Bioinformática",
+    "nome_norm": "introducao a bioinformatica",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZB015-13",
+    "nome": "Introdução à Criptografia",
+    "nome_norm": "introducao a criptografia",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZB018-13",
+    "nome": "Introdução à Modelagem e Processos Estocásticos",
+    "nome_norm": "introducao a modelagem e processos estocasticos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTC021-20",
+    "nome": "Neurociência Teórica e Computacional",
+    "nome_norm": "neurociencia teorica e computacional",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA032-17",
+    "nome": "Introdução à Programação de Jogos",
+    "nome_norm": "introducao a programacao de jogos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZI034-17",
+    "nome": "Jogos Digitais: Aspectos Técnicos e Aplicações",
+    "nome_norm": "jogos digitais aspectos tecnicos e aplicacoes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA010-13",
+    "nome": "Laboratório de Engenharia de Software",
+    "nome_norm": "laboratorio de engenharia de software",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA011-17",
+    "nome": "Laboratório de Redes",
+    "nome_norm": "laboratorio de redes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA012-13",
+    "nome": "Laboratório de Sistemas Operacionais",
+    "nome_norm": "laboratorio de sistemas operacionais",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA013-13",
+    "nome": "Lógicas não Clássicas",
+    "nome_norm": "logicas nao classicas",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA014-17",
+    "nome": "Métodos de Otimização",
+    "nome_norm": "metodos de otimizacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCCC013-23",
+    "nome": "Otimização Linear",
+    "nome_norm": "otimizacao linear",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA015-13",
+    "nome": "Mineração de Dados",
+    "nome_norm": "mineracao de dados",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESTG013-17",
+    "nome": "Pesquisa Operacional",
+    "nome_norm": "pesquisa operacional",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 6
+  },
+  {
+    "codigo": "ESZI022-17",
+    "nome": "Planejamento de Redes de Informação",
+    "nome_norm": "planejamento de redes de informacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA038-17",
+    "nome": "Prática Avançada de Programação A",
+    "nome_norm": "pratica avancada de programacao a",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA039-17",
+    "nome": "Prática Avançada de Programação B",
+    "nome_norm": "pratica avancada de programacao b",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA040-17",
+    "nome": "Prática Avançada de Programação C",
+    "nome_norm": "pratica avancada de programacao c",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA041-17",
+    "nome": "Processamento de Imagens Utilizando GPU",
+    "nome_norm": "processamento de imagens utilizando gpu",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA017-13",
+    "nome": "Processamento de Linguagem Natural",
+    "nome_norm": "processamento de linguagem natural",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCTC022-15",
+    "nome": "Processamento de Sinais Neurais",
+    "nome_norm": "processamento de sinais neurais",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA018-17",
+    "nome": "Processamento Digital de Imagens",
+    "nome_norm": "processamento digital de imagens",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA042-17",
+    "nome": "Processo e Desenvolvimento de Softwares Educacionais",
+    "nome_norm": "processo e desenvolvimento de softwares educacionais",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA033-17",
+    "nome": "Programação Avançada para Dispositivos Móveis",
+    "nome_norm": "programacao avancada para dispositivos moveis",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZI033-17",
+    "nome": "Programação de Dispositivos Móveis",
+    "nome_norm": "programacao de dispositivos moveis",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "MCZA019-17",
+    "nome": "Programação para Web",
+    "nome_norm": "programacao para web",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA020-13",
+    "nome": "Programação Paralela",
+    "nome_norm": "programacao paralela",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA034-17",
+    "nome": "Programação Segura",
+    "nome_norm": "programacao segura",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA054-22",
+    "nome": "Projeto Avançado em Sistemas de Computação",
+    "nome_norm": "projeto avancado em sistemas de computacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA021-17",
+    "nome": "Projeto de Redes",
+    "nome_norm": "projeto de redes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA022-17",
+    "nome": "Projeto Interdisciplinar",
+    "nome_norm": "projeto interdisciplinar",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA023-17",
+    "nome": "Redes Convergentes",
+    "nome_norm": "redes convergentes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZI029-17",
+    "nome": "Redes WAN de Banda Larga",
+    "nome_norm": "redes wan de banda larga",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA024-17",
+    "nome": "Redes sem Fio",
+    "nome_norm": "redes sem fio",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA044-17",
+    "nome": "Robótica e Sistemas Inteligentes",
+    "nome_norm": "robotica e sistemas inteligentes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA045-17",
+    "nome": "Robótica Educacional",
+    "nome_norm": "robotica educacional",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA025-13",
+    "nome": "Segurança em Redes",
+    "nome_norm": "seguranca em redes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA046-17",
+    "nome": "Semântica de Linguagem de Programação",
+    "nome_norm": "semantica de linguagem de programacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA026-17",
+    "nome": "Sistemas de Gerenciamento de Banco de Dados",
+    "nome_norm": "sistemas de gerenciamento de banco de dados",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA027-17",
+    "nome": "Sistemas de Informação",
+    "nome_norm": "sistemas de informacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "ESZI014-17",
+    "nome": "Sistemas Inteligentes",
+    "nome_norm": "sistemas inteligentes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA028-13",
+    "nome": "Sistemas Multiagentes",
+    "nome_norm": "sistemas multiagentes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA029-13",
+    "nome": "Sistemas Multimídia",
+    "nome_norm": "sistemas multimidia",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA047-17",
+    "nome": "Sistemas Multi-Robôs Sociais",
+    "nome_norm": "sistemas multi robos sociais",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA050-17",
+    "nome": "Técnicas Avançadas de Programação",
+    "nome_norm": "tecnicas avancadas de programacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "NHZ5019-22",
+    "nome": "Tecnologias da Informação e Comunicação na Educação",
+    "nome_norm": "tecnologias da informacao e comunicacao na educacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 3
+  },
+  {
+    "codigo": "MCZB033-17",
+    "nome": "Teoria da Recursão e Computabilidade",
+    "nome_norm": "teoria da recursao e computabilidade",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZB032-13",
+    "nome": "Teoria das Filas",
+    "nome_norm": "teoria das filas",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA048-17",
+    "nome": "Teoria Espectral de Grafos",
+    "nome_norm": "teoria espectral de grafos",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA049-17",
+    "nome": "Tópicos Emergentes em Banco de Dados",
+    "nome_norm": "topicos emergentes em banco de dados",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA030-17",
+    "nome": "Vida Artificial na Computação",
+    "nome_norm": "vida artificial na computacao",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 2
+  },
+  {
+    "codigo": "ESZA019-17",
+    "nome": "Visão Computacional",
+    "nome_norm": "visao computacional",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA052-22",
+    "nome": "Vizualização de Dados e Informações",
+    "nome_norm": "vizualizacao de dados e informacoes",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  },
+  {
+    "codigo": "MCZA031-13",
+    "nome": "Web Semântica",
+    "nome_norm": "web semantica",
+    "categoria": "opcao_limitada",
+    "quadrimestre_ideal": null,
+    "creditos": 4
+  }
+]
