@@ -42,50 +42,59 @@ class EstadoAplicacao:
         DATA_PRIVADO.mkdir(parents=True, exist_ok=True)
 
         ofertas = sorted(DATA_PUBLICO.glob("*turmas_ofertadas*.pdf"), reverse=True)
-        if not ofertas:
+        caches_oferta = sorted(DATA_PUBLICO.glob("*turmas_ofertadas*_cache.json"), reverse=True)
+        if not ofertas and not caches_oferta:
             raise RuntimeError(
                 "Nenhum PDF de turmas ofertadas encontrado em data/publico/. "
                 "Clique em 'Atualizar PDFs da PROGRAD' ou coloque o PDF lá."
             )
 
-        oferta_pdf = ofertas[0]
-        self.oferta_arquivo = oferta_pdf.name
+        from src.models import DisciplinaCatalogo, DisciplinaGrade, Turma
 
-        oferta_cache = DATA_PUBLICO / f"{oferta_pdf.stem}_cache.json"
-        if not forcar_reparse and oferta_cache.exists() and oferta_cache.stat().st_mtime >= oferta_pdf.stat().st_mtime:
-            from src.models import Turma
-
-            turmas = [Turma(**t) for t in json.loads(oferta_cache.read_text(encoding="utf-8"))]
+        if ofertas:
+            oferta_pdf = ofertas[0]
+            self.oferta_arquivo = oferta_pdf.name
+            oferta_cache = DATA_PUBLICO / f"{oferta_pdf.stem}_cache.json"
+            if not forcar_reparse and oferta_cache.exists() and oferta_cache.stat().st_mtime >= oferta_pdf.stat().st_mtime:
+                turmas = [Turma(**t) for t in json.loads(oferta_cache.read_text(encoding="utf-8"))]
+            else:
+                turmas = parse_pdf_oferta(oferta_pdf)
+                oferta_cache.write_text(
+                    json.dumps([t.model_dump() for t in turmas], ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
         else:
-            turmas = parse_pdf_oferta(oferta_pdf)
-            oferta_cache.write_text(
-                json.dumps([t.model_dump() for t in turmas], ensure_ascii=False, indent=2),
-                encoding="utf-8",
-            )
+            oferta_cache = caches_oferta[0]
+            self.oferta_arquivo = oferta_cache.name.replace("_cache.json", ".pdf")
+            turmas = [Turma(**t) for t in json.loads(oferta_cache.read_text(encoding="utf-8"))]
 
         catalogo_pdf = DATA_PUBLICO / "catalogo_disciplinas.pdf"
-        catalogo = (
-            parse_pdf_catalogo(
+        catalogo_cache = DATA_PUBLICO / "catalogo_cache.json"
+        if catalogo_pdf.exists():
+            catalogo = parse_pdf_catalogo(
                 catalogo_pdf,
-                cache_path=DATA_PUBLICO / "catalogo_cache.json",
+                cache_path=catalogo_cache,
                 usar_cache=not forcar_reparse,
             )
-            if catalogo_pdf.exists()
-            else []
-        )
+        elif catalogo_cache.exists():
+            catalogo = [DisciplinaCatalogo(**c) for c in json.loads(catalogo_cache.read_text(encoding="utf-8"))]
+        else:
+            catalogo = []
 
         ppc_pdf = DATA_PUBLICO / "ppc_bcc.pdf"
         ol_pdf = DATA_PUBLICO / "opcoes_limitadas_bcc.pdf"
-        grade = (
-            parse_grade_bcc(
+        grade_cache = DATA_PUBLICO / "grade_bcc_cache.json"
+        if ppc_pdf.exists():
+            grade = parse_grade_bcc(
                 ppc_pdf,
                 opcoes_limitadas_pdf_path=ol_pdf if ol_pdf.exists() else None,
-                cache_path=DATA_PUBLICO / "grade_bcc_cache.json",
+                cache_path=grade_cache,
                 usar_cache=not forcar_reparse,
             )
-            if ppc_pdf.exists()
-            else []
-        )
+        elif grade_cache.exists():
+            grade = [DisciplinaGrade(**g) for g in json.loads(grade_cache.read_text(encoding="utf-8"))]
+        else:
+            grade = []
 
         self.motor = MotorMatricula(turmas=turmas, catalogo=catalogo, grade=grade)
         self.historico = carregar_historico_sanitizado(HISTORICO_JSON)
