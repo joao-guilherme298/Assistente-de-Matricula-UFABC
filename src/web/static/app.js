@@ -189,9 +189,37 @@ async function carregarTurmas() {
   renderGradeSemanal();
 }
 
+function ehCursoBch(curso) {
+  const up = (curso || "").toUpperCase();
+  return [
+    "HUMANIDADES",
+    "ECONÔMICAS",
+    "ECONOMICAS",
+    "FILOSOFIA",
+    "POLÍTICAS",
+    "POLITICAS",
+    "RELAÇÕES",
+    "RELACOES",
+    "PLANEJAMENTO",
+    "HISTÓRIA",
+    "HISTORIA",
+    "GEOGRAFIA",
+    "HUMANAS",
+  ].some((k) => up.includes(k));
+}
+
 function renderProgresso() {
   if (!ultimoProgresso) return;
   const p = ultimoProgresso;
+  const curso = cursoAtual();
+  const isBcc = curso === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
+  const isBch = ehCursoBch(curso);
+
+  document.getElementById("cardStatBcc").style.display = isBcc ? "" : "none";
+  document.getElementById("cardStatOl").style.display = isBcc ? "" : "none";
+  document.getElementById("cardStatBct").style.display = isBch ? "none" : "";
+  document.getElementById("btnVerPendentes").style.display = isBch ? "none" : "";
+
   document.getElementById("statBcc").textContent = `${p.obrigatorias_bcc.feitas} / ${p.obrigatorias_bcc.total}`;
   document.getElementById("statBccSub").textContent = p.tem_historico
     ? `${p.obrigatorias_bcc.pendentes.length} pendentes (${p.obrigatorias_bcc.pendentes.filter((x) => x.ofertada_agora).length} ofertadas agora)`
@@ -613,8 +641,9 @@ document.getElementById("btnVerPendentes").addEventListener("click", () => {
           .join("")}
       </ul>`;
   };
+  const isBcc = cursoAtual() === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
   document.getElementById("conteudoPendentes").innerHTML =
-    renderGrupo("Obrigatórias do BCC", ultimoProgresso.obrigatorias_bcc.pendentes) +
+    (isBcc ? renderGrupo("Obrigatórias do BCC", ultimoProgresso.obrigatorias_bcc.pendentes) : "") +
     renderGrupo("Obrigatórias do BC&T", ultimoProgresso.obrigatorias_bct.pendentes);
   modalPend.classList.add("open");
 });
