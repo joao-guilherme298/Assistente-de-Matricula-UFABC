@@ -53,20 +53,28 @@ def exportar(atualizar_prograd: bool = False) -> None:
     # 2. Catálogo (somente campos necessários para manter o JSON leve na web)
     cat_pdf = DATA_PUBLICO / "catalogo_disciplinas.pdf"
     cat_cache = DATA_PUBLICO / "catalogo_cache.json"
-    if cat_pdf.exists() and (atualizar_prograd or not cat_cache.exists()):
-        cat_raw = [c.model_dump() for c in parse_pdf_catalogo(cat_pdf, cache_path=cat_cache, usar_cache=not atualizar_prograd)]
+    precisa_reparse_cat = atualizar_prograd or not cat_cache.exists()
+    if not precisa_reparse_cat and cat_cache.exists():
+        amostra = json.loads(cat_cache.read_text(encoding="utf-8"))[:1]
+        if amostra and "ementa" not in amostra[0]:
+            precisa_reparse_cat = True
+
+    if cat_pdf.exists() and precisa_reparse_cat:
+        cat_raw = [c.model_dump() for c in parse_pdf_catalogo(cat_pdf, cache_path=cat_cache, usar_cache=False)]
     elif cat_cache.exists():
         cat_raw = json.loads(cat_cache.read_text(encoding="utf-8"))
     else:
         cat_raw = []
 
-    # Compactar catálogo para a web (remover campos redundantes)
+    # Compactar catálogo para a web (incluindo objetivos e ementa para o modal)
     cat_web = [
         {
             "codigo": c["codigo"],
             "nome": c["nome"],
             "creditos": c["creditos"],
             "recomendacoes": c["recomendacoes"],
+            "objetivos": c.get("objetivos", ""),
+            "ementa": c.get("ementa", ""),
         }
         for c in cat_raw
     ]

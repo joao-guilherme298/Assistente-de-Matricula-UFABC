@@ -18,6 +18,14 @@ RECOM_RE = re.compile(
     r"RECOMENDA[CÇ][AÃ]O\s*:\s*(?P<rec>.+?)(?=\n\s*(?:OBJETIVOS|EMENTA|METODOLOGIA|BIBLIOGRAFIA|PR[ÉE]-REQUISITO)\b|$)",
     re.DOTALL | re.IGNORECASE,
 )
+OBJ_RE = re.compile(
+    r"OBJETIVOS\s*:\s*(?P<obj>.+?)(?=\n\s*(?:METODOLOGIA|EMENTA|BIBLIOGRAFIA)\b|$)",
+    re.DOTALL | re.IGNORECASE,
+)
+EMENTA_RE = re.compile(
+    r"\bEMENTA\b\s*:?\s*(?P<ementa>.+?)(?=\n\s*(?:BIBLIOGRAFIA|REFER[EÊ]NCIAS)\b|$)",
+    re.DOTALL | re.IGNORECASE,
+)
 
 
 def _creditos_de_tpi(tpi: str) -> int:
@@ -74,10 +82,21 @@ def parse_pdf_catalogo(
         nome = " ".join(m_head.group("nome").split())
         tpi = m_head.group("tpi").strip()
 
+        resto = texto[m_head.end() :]
         rec_raw = ""
-        m_rec = RECOM_RE.search(texto[m_head.end() :])
+        m_rec = RECOM_RE.search(resto)
         if m_rec:
             rec_raw = " ".join(m_rec.group("rec").split())
+
+        objetivos = ""
+        m_obj = OBJ_RE.search(resto)
+        if m_obj:
+            objetivos = " ".join(m_obj.group("obj").split())
+
+        ementa = ""
+        m_em = EMENTA_RE.search(resto)
+        if m_em:
+            ementa = " ".join(m_em.group("ementa").split())
 
         disc = DisciplinaCatalogo(
             codigo=codigo,
@@ -87,6 +106,8 @@ def parse_pdf_catalogo(
             creditos=_creditos_de_tpi(tpi),
             recomendacoes=_split_recomendacoes(rec_raw),
             recomendacoes_raw=rec_raw,
+            objetivos=objetivos,
+            ementa=ementa,
         )
         disciplinas[codigo] = disc
 

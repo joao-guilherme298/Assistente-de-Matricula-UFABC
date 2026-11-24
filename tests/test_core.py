@@ -209,3 +209,10 @@ def test_api_endpoints_basicos():
         )
         assert r_eng.status_code == 200
         assert len(r_eng.json()["turmas"]) > 0
+
+        # Testar endpoint de ementa/objetivos do catálogo
+        r_info = client.get("/api/catalogo/info?codigo=MCCC001-23")
+        assert r_info.status_code == 200
+        info = r_info.json()
+        assert info["encontrada"] is True
+        assert len(info["ementa"]) > 20

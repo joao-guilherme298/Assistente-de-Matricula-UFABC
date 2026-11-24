@@ -216,6 +216,27 @@ class ConflitoRequest(BaseModel):
     candidata_id: str
 
 
+@app.get("/api/catalogo/info")
+def obter_info_catalogo(codigo: str = "", nome: str = "") -> dict:
+    if not estado.motor:
+        raise HTTPException(status_code=503, detail="Base ainda não carregada.")
+    from src.models import normalizar_texto
+
+    cat = estado.motor.buscar_catalogo(codigo, normalizar_texto(nome))
+    if not cat:
+        return {"encontrada": False}
+    return {
+        "encontrada": True,
+        "codigo": cat.codigo,
+        "nome": cat.nome,
+        "tpi": cat.tpi,
+        "creditos": cat.creditos,
+        "recomendacoes": cat.recomendacoes,
+        "objetivos": cat.objetivos,
+        "ementa": cat.ementa,
+    }
+
+
 @app.post("/api/conflito")
 def verificar_conflito(req: ConflitoRequest) -> dict:
     if not estado.motor:

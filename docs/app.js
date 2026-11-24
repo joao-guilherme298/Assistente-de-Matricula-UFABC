@@ -263,7 +263,7 @@ function renderListaTurmas() {
     card.innerHTML = `
       <div class="turma-top">
         <div>
-          <div class="turma-title">${rep.disciplina}</div>
+          <div class="turma-title turma-title-link" title="Clique para ver objetivos e ementa">${rep.disciplina} <span style="font-size:0.74rem;color:var(--muted);font-weight:500;">📖</span></div>
           <div class="turma-code">${rep.codigo || "—"} • TPEI ${rep.tpi || "—"} (${rep.creditos} créd.) • ${turmas.length} turma${turmas.length === 1 ? "" : "s"}</div>
         </div>
       </div>
@@ -276,6 +276,8 @@ function renderListaTurmas() {
       ${recsHtml}
       <div class="turmas-sublist"></div>
     `;
+
+    card.querySelector(".turma-title-link").addEventListener("click", () => abrirModalEmenta(rep));
 
     const sublist = card.querySelector(".turmas-sublist");
     turmas.forEach((t) => {
@@ -602,6 +604,33 @@ document.getElementById("btnRemoverHistorico").addEventListener("click", () => {
   toast("Histórico removido.");
   atualizarTela();
 });
+
+// Modal Ementa
+const modalEmenta = document.getElementById("modalEmenta");
+document.getElementById("btnFecharEmenta").addEventListener("click", () => modalEmenta.classList.remove("open"));
+
+function abrirModalEmenta(turma) {
+  const cat = motor ? motor.buscarCatalogo(turma.codigo, turma.disciplina_norm) : null;
+  document.getElementById("ementaTitulo").textContent = turma.disciplina;
+  document.getElementById("ementaMeta").textContent =
+    `${turma.codigo || "Sem código"} • TPEI ${turma.tpi || "—"} • ${turma.creditos} créditos`;
+
+  const partes = [];
+  if (cat && cat.recomendacoes && cat.recomendacoes.length) {
+    partes.push(`<div><strong>Recomendações:</strong><p style="color:var(--muted);margin-top:4px;">${cat.recomendacoes.join("; ")}</p></div>`);
+  }
+  if (cat && cat.objetivos) {
+    partes.push(`<div><strong>Objetivos:</strong><p style="color:var(--muted);margin-top:4px;">${cat.objetivos}</p></div>`);
+  }
+  if (cat && cat.ementa) {
+    partes.push(`<div><strong>Ementa:</strong><p style="color:var(--muted);margin-top:4px;">${cat.ementa}</p></div>`);
+  }
+  if (!partes.length) {
+    partes.push(`<p style="color:var(--muted);">Ementa não encontrada no Catálogo 2025–2026 para esta disciplina.</p>`);
+  }
+  document.getElementById("ementaConteudo").innerHTML = partes.join("");
+  modalEmenta.classList.add("open");
+}
 
 // Modal Obrigatórias Pendentes
 const modalPend = document.getElementById("modalPendentes");

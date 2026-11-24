@@ -1,9 +1,12 @@
-# 🎓 Assistente de Matrícula UFABC — BCC (PPC 2023)
+# 🎓 Assistente de Matrícula UFABC
+
+[![CI](https://github.com/joao-guilherme298/Assistente-de-Matricula-UFABC/actions/workflows/ci.yml/badge.svg)](https://github.com/joao-guilherme298/Assistente-de-Matricula-UFABC/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 🌐 **Acesse direto no navegador (sem instalar nada):**
 👉 **[https://joao-guilherme298.github.io/Assistente-de-Matricula-UFABC/](https://joao-guilherme298.github.io/Assistente-de-Matricula-UFABC/)**
 
-Ferramenta **100% local e privada** para facilitar a montagem da grade quadrimestral da UFABC (Bacharelado em Ciência da Computação — Matriz 2023), cruzando automaticamente:
+Ferramenta **100% local e privada** para facilitar a montagem da grade quadrimestral da UFABC (suporte a todos os cursos da UFABC, com matriz curricular completa do BCC — PPC 2023 e BC&T), cruzando automaticamente:
 
 - **Turmas Ofertadas** do quadrimestre ([PROGRAD Matrículas](https://prograd.ufabc.edu.br/matriculas))
 - **Catálogo de Disciplinas** mais recente ([PROGRAD Catálogos](https://prograd.ufabc.edu.br/catalogos-de-disciplinas)) para checar **recomendações (pré-requisitos)**
@@ -53,9 +56,10 @@ Com o servidor rodando, acesse **[http://localhost:8000](http://localhost:8000)*
 > **Dica para os próximos quadrimestres:** clique em **"🔄 Atualizar PDFs PROGRAD"** no topo da página para baixar automaticamente a nova lista de turmas ofertadas.
 
 ## 🧭 Recursos
-- Filtros dinâmicos por **Campus** (Santo André / São Bernardo / Todos), **Turno** (Matutino / Noturno / Todos), **Categoria** (Obrigatórias BCC, BC&T, Opções Limitadas, Livres) e busca por nome/código/professor.
-- Opção **"Contar matérias em curso como feitas"** (ativa por padrão).
-- Badges automáticos de recomendações (🟢 OK / 🟡 Parcial / 🔴 Pendente) mostrando exatamente qual recomendação falta.
-- **Grade semanal visual (Seg–Sáb)** com detecção automática de conflito de horários (inclusive aulas quinzenais Q1/Q2).
-- Botão **"Atualizar PDFs PROGRAD"** para baixar automaticamente os arquivos mais recentes nos próximos quadrimestres.
-- Botão **"Copiar códigos"** para levar sua grade pronta para o portal de matrícula.
+- **Todos os cursos da UFABC**: seletor de curso, **Campus** (Santo André / São Bernardo / Todos), **Turno** (Matutino / Noturno / Todos), **Categoria**, **Dias da semana** (`Seg`–`Sáb`) e busca por nome/código/professor.
+- **Turmas agrupadas por disciplina** com visualização de **Objetivos e Ementa oficial** ao clicar no nome da matéria.
+- **Recomendações e Destravamento**: badges automáticos (🟢 OK / 🟡 Parcial / 🔴 Pendente) e selo `🔓 Destrava N` indicando quantas matérias futuras dependem dela.
+- **Opção "Contar matérias em curso como feitas"** (ativa por padrão).
+- **Grade semanal visual** com abas **Plano A / B / C**, alternância **Todas | Quinzenal I | Quinzenal II** e detecção automática de conflito de horários.
+- **Sugestão automática (`✨ Sugerir grade`)** com opção de completar créditos restantes com livres/limitadas mais leves.
+- **Exportação**: imagem **`.png`** (por semana Q1/Q2/Todas), calendário **`.ics`** (Google/Apple Calendar) e cópia rápida dos códigos de matrícula.

@@ -58,6 +58,8 @@ class DisciplinaCatalogo(BaseModel):
     creditos: int = 0
     recomendacoes: list[str] = Field(default_factory=list)
     recomendacoes_raw: str = ""
+    objetivos: str = ""
+    ementa: str = ""
 
     def model_post_init(self, __context) -> None:
         if not self.nome_norm:

@@ -232,6 +232,13 @@ button {
   gap: 10px;
 }
 .turma-title { font-weight: 700; font-size: 0.94rem; }
+.turma-title-link {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.turma-title-link:hover { color: #93c5fd; text-decoration: underline; }
 .turma-code { font-size: 0.76rem; color: var(--muted); font-family: monospace; margin-top: 2px; }
 
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
