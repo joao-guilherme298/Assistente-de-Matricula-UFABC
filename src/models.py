@@ -43,6 +43,7 @@ class Turma(BaseModel):
     docente_pratica: str = ""
     horarios: list[Horario] = Field(default_factory=list)
     horarios_raw: str = ""
+    cursos_oferta: list[str] = Field(default_factory=list)
 
     def model_post_init(self, __context) -> None:
         if not self.disciplina_norm:

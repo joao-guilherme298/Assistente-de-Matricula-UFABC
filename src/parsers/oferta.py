@@ -129,7 +129,7 @@ def _juntar_docentes(*valores: Optional[str]) -> str:
 def parse_pdf_oferta(pdf_path: Path) -> list[Turma]:
     """Lê o PDF de turmas ofertadas da PROGRAD UFABC e retorna lista de Turma."""
     turmas: list[Turma] = []
-    vistos: set[str] = set()
+    por_id: dict[str, Turma] = {}
 
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
@@ -183,28 +183,30 @@ def parse_pdf_oferta(pdf_path: Path) -> list[Turma]:
                         vagas = None
 
                     turma_id = codigo_turma or f"{normalizar_texto(disciplina)}_{turma_nome}_{campus_raw}_{turno_raw}"
-                    # Mesma turma pode aparecer listada sob mais de um curso no PDF; deduplicamos por codigo_turma
-                    if turma_id in vistos:
+                    # Mesma turma pode aparecer listada sob mais de um curso no PDF; acumulamos os cursos
+                    if turma_id in por_id:
+                        if curso and curso not in por_id[turma_id].cursos_oferta:
+                            por_id[turma_id].cursos_oferta.append(curso)
                         continue
-                    vistos.add(turma_id)
 
-                    turmas.append(
-                        Turma(
-                            id=turma_id,
-                            codigo=_extrair_codigo_disciplina(codigo_turma),
-                            disciplina=disciplina,
-                            disciplina_norm=normalizar_texto(disciplina),
-                            turma=turma_nome,
-                            campus=_normalizar_campus(campus_raw),
-                            turno=_normalizar_turno(turno_raw),
-                            tpi=tpi,
-                            creditos=_creditos_de_tpi(tpi),
-                            vagas=vagas,
-                            docente_teoria=docente_teoria,
-                            docente_pratica=docente_pratica,
-                            horarios=horarios,
-                            horarios_raw=horarios_raw,
-                        )
+                    nova = Turma(
+                        id=turma_id,
+                        codigo=_extrair_codigo_disciplina(codigo_turma),
+                        disciplina=disciplina,
+                        disciplina_norm=normalizar_texto(disciplina),
+                        turma=turma_nome,
+                        campus=_normalizar_campus(campus_raw),
+                        turno=_normalizar_turno(turno_raw),
+                        tpi=tpi,
+                        creditos=_creditos_de_tpi(tpi),
+                        vagas=vagas,
+                        docente_teoria=docente_teoria,
+                        docente_pratica=docente_pratica,
+                        horarios=horarios,
+                        horarios_raw=horarios_raw,
+                        cursos_oferta=[curso] if curso else [],
                     )
+                    por_id[turma_id] = nova
+                    turmas.append(nova)
 
     return turmas

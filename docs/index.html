@@ -16,7 +16,7 @@
 <body>
   <header>
     <div class="brand">
-      <h1>🎓 Assistente de Matrícula UFABC — BCC (PPC 2023)</h1>
+      <h1>🎓 Assistente de Matrícula UFABC</h1>
       <p id="metaInfo">Carregando base pública da PROGRAD...</p>
     </div>
     <div class="header-actions">
@@ -51,6 +51,12 @@
 
     <section class="filters-bar">
       <div class="field">
+        <label for="fCurso">Curso</label>
+        <select id="fCurso" style="max-width:240px;">
+          <option value="BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO" selected>Bacharelado em Ciência da Computação</option>
+        </select>
+      </div>
+      <div class="field">
         <label for="fCampus">Campus</label>
         <select id="fCampus">
           <option value="Santo André" selected>Santo André</option>
@@ -70,9 +76,9 @@
         <label for="fCategoria">Categoria</label>
         <select id="fCategoria">
           <option value="Todas">Todas</option>
-          <option value="obrigatoria_bcc">Obrigatórias BCC</option>
+          <option value="obrigatoria_bcc">Do Curso / Obrigatórias</option>
           <option value="obrigatoria_bct">Obrigatórias BC&amp;T</option>
-          <option value="opcao_limitada">Opções Limitadas BCC</option>
+          <option value="opcao_limitada">Opções Limitadas</option>
           <option value="livre">Livres / Outras</option>
         </select>
       </div>
@@ -128,6 +134,8 @@
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn-secondary btn-sm" id="btnAbrirSugerir">✨ Sugerir grade</button>
+            <button class="btn-secondary btn-sm" id="btnExportarPng" title="Baixar imagem da grade">🖼️ .png</button>
+            <button class="btn-secondary btn-sm" id="btnExportarIcs" title="Importar no Google/Apple Calendar">📅 .ics</button>
             <button class="btn-primary btn-sm" id="btnCopiarCodigos">📋 Copiar</button>
             <button class="btn-danger btn-sm" id="btnLimparGrade">Limpar</button>
           </div>

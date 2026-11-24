@@ -211,9 +211,65 @@ export class MotorMatriculaWeb {
     return { status: "pendente", detalhes };
   }
 
+  listarCursosDisponiveis() {
+    const cursos = new Set([
+      "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
+      "BACHARELADO EM CIÊNCIA E TECNOLOGIA",
+    ]);
+    for (const t of this.turmas) {
+      for (const c of t.cursos_oferta || []) {
+        if (c && c.toUpperCase() !== "ENGENHARIAS") cursos.add(c);
+      }
+    }
+    return [...cursos].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }
+
+  _categoriaParaCurso(turma, curso) {
+    const cursoUp = (curso || "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO").trim().toUpperCase();
+    const gradeInfo = this.buscarGrade(turma.codigo, turma.disciplina_norm);
+
+    if (cursoUp === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO") {
+      return gradeInfo ? gradeInfo.categoria : "livre";
+    }
+
+    const cursosT = new Set((turma.cursos_oferta || []).map((c) => c.toUpperCase()));
+
+    if (cursoUp === "BACHARELADO EM CIÊNCIA E TECNOLOGIA") {
+      if (gradeInfo && gradeInfo.categoria === "obrigatoria_bct") return "obrigatoria_bct";
+      if (cursosT.has(cursoUp)) return "opcao_limitada";
+      return "livre";
+    }
+
+    const ehEngenharia = cursoUp.includes("ENGENHARIA");
+    const ehBch = [
+      "HUMANIDADES",
+      "ECONÔMICAS",
+      "ECONOMICAS",
+      "FILOSOFIA",
+      "POLÍTICAS",
+      "POLITICAS",
+      "RELAÇÕES",
+      "RELACOES",
+      "PLANEJAMENTO",
+      "HISTÓRIA",
+      "HISTORIA",
+      "GEOGRAFIA",
+      "HUMANAS",
+    ].some((k) => cursoUp.includes(k));
+
+    if (cursosT.has(cursoUp) || (ehEngenharia && cursosT.has("ENGENHARIAS"))) {
+      return "obrigatoria_bcc";
+    }
+    if (!ehBch && gradeInfo && gradeInfo.categoria === "obrigatoria_bct") {
+      return "obrigatoria_bct";
+    }
+    return "livre";
+  }
+
   analisarOferta({
     historico = null,
     contarEmCurso = true,
+    curso = "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
     campus = "Santo André",
     turno = "Matutino",
     categoria = "Todas",
@@ -238,8 +294,7 @@ export class MotorMatriculaWeb {
         if (t.horarios.some((h) => !diasSet.has(h.dia))) continue;
       }
 
-      const gradeInfo = this.buscarGrade(t.codigo, t.disciplina_norm);
-      const catTurma = gradeInfo ? gradeInfo.categoria : "livre";
+      const catTurma = this._categoriaParaCurso(t, curso);
       if (categoria && categoria !== "Todas" && catTurma !== categoria) continue;
 
       const jaCursada = this._disciplinaCumprida(t.codigo, t.disciplina_norm, idx);
@@ -325,6 +380,7 @@ export class MotorMatriculaWeb {
   sugerirGrades({
     historico = null,
     contarEmCurso = true,
+    curso = "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
     campus = "Santo André",
     turno = "Matutino",
     diasPermitidos = null,
@@ -338,6 +394,7 @@ export class MotorMatriculaWeb {
     const candidatas = this.analisarOferta({
       historico,
       contarEmCurso,
+      curso,
       campus,
       turno,
       categoria: "Todas",

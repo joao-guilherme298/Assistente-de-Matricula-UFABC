@@ -138,6 +138,7 @@ def get_meta() -> dict:
         "total_grade": len(estado.motor.grade),
         "campi": campi,
         "turnos": turnos,
+        "cursos": estado.motor.listar_cursos_disponiveis(),
         "tem_historico": estado.historico is not None and len(estado.historico.disciplinas) > 0,
         "total_historico": len(estado.historico.disciplinas) if estado.historico else 0,
     }
@@ -145,6 +146,7 @@ def get_meta() -> dict:
 
 @app.get("/api/turmas")
 def listar_turmas(
+    curso: str = "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
     campus: str = "Santo André",
     turno: str = "Matutino",
     categoria: str = "Todas",
@@ -160,6 +162,7 @@ def listar_turmas(
     turmas = estado.motor.analisar_oferta(
         historico=estado.historico,
         contar_em_curso=contar_em_curso,
+        curso=curso,
         campus=campus,
         turno=turno,
         categoria=categoria,
@@ -176,6 +179,7 @@ def listar_turmas(
 
 
 class SugerirGradeRequest(BaseModel):
+    curso: str = "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO"
     campus: str = "Santo André"
     turno: str = "Matutino"
     dias_permitidos: Optional[list[str]] = None
@@ -194,6 +198,7 @@ def sugerir_grade(req: SugerirGradeRequest) -> dict:
     sugestoes = estado.motor.sugerir_grades(
         historico=estado.historico,
         contar_em_curso=req.contar_em_curso,
+        curso=req.curso,
         campus=req.campus,
         turno=req.turno,
         dias_permitidos=req.dias_permitidos,

@@ -238,10 +238,65 @@ class MotorMatricula:
             return "parcial", detalhes
         return "pendente", detalhes
 
+    def listar_cursos_disponiveis(self) -> list[str]:
+        cursos = set()
+        for t in self.turmas:
+            for c in t.cursos_oferta:
+                if c and c.upper() != "ENGENHARIAS":
+                    cursos.add(c)
+        cursos.add("BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO")
+        cursos.add("BACHARELADO EM CIÊNCIA E TECNOLOGIA")
+        return sorted(cursos)
+
+    def _categoria_para_curso(self, turma: Turma, curso: str) -> str:
+        curso_up = (curso or "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO").strip().upper()
+        grade_info = self.buscar_grade(turma.codigo, turma.disciplina_norm)
+
+        # BCC (PPC 2023 oficial completo)
+        if curso_up == "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO":
+            return grade_info.categoria if grade_info else "livre"
+
+        # BC&T puro
+        if curso_up == "BACHARELADO EM CIÊNCIA E TECNOLOGIA":
+            if grade_info and grade_info.categoria == "obrigatoria_bct":
+                return "obrigatoria_bct"
+            if any(c.upper() == curso_up for c in turma.cursos_oferta):
+                return "opcao_limitada"
+            return "livre"
+
+        # Outros cursos da UFABC usando o vínculo oficial da oferta PROGRAD
+        cursos_t = {c.upper() for c in turma.cursos_oferta}
+        eh_engenharia = "ENGENHARIA" in curso_up
+        eh_bch = any(
+            k in curso_up
+            for k in (
+                "HUMANIDADES",
+                "ECONÔMICAS",
+                "ECONOMICAS",
+                "FILOSOFIA",
+                "POLÍTICAS",
+                "POLITICAS",
+                "RELAÇÕES",
+                "RELACOES",
+                "PLANEJAMENTO",
+                "HISTÓRIA",
+                "HISTORIA",
+                "GEOGRAFIA",
+                "HUMANAS",
+            )
+        )
+
+        if curso_up in cursos_t or (eh_engenharia and "ENGENHARIAS" in cursos_t):
+            return "obrigatoria_bcc"  # slot de disciplina específica do curso selecionado
+        if not eh_bch and grade_info and grade_info.categoria == "obrigatoria_bct":
+            return "obrigatoria_bct"
+        return "livre"
+
     def analisar_oferta(
         self,
         historico: Optional[HistoricoSanitizado] = None,
         contar_em_curso: bool = True,
+        curso: str = "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
         campus: Optional[str] = None,
         turno: Optional[str] = None,
         categoria: Optional[str] = None,
@@ -281,8 +336,7 @@ class MotorMatricula:
                 if any(h.dia not in dias_set for h in t.horarios):
                     continue
 
-            grade_info = self.buscar_grade(t.codigo, t.disciplina_norm)
-            cat_turma = grade_info.categoria if grade_info else "livre"
+            cat_turma = self._categoria_para_curso(t, curso)
             if categoria and categoria != "Todas" and cat_turma != categoria:
                 continue
 
@@ -360,6 +414,7 @@ class MotorMatricula:
         self,
         historico: Optional[HistoricoSanitizado] = None,
         contar_em_curso: bool = True,
+        curso: str = "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
         campus: Optional[str] = "Santo André",
         turno: Optional[str] = "Matutino",
         dias_permitidos: Optional[list[str]] = None,
@@ -378,6 +433,7 @@ class MotorMatricula:
         candidatas = self.analisar_oferta(
             historico=historico,
             contar_em_curso=contar_em_curso,
+            curso=curso,
             campus=campus,
             turno=turno,
             categoria="Todas",

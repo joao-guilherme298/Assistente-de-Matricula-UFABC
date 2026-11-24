@@ -1,4 +1,5 @@
 import { MotorMatriculaWeb, horaParaMin, horariosConflitam } from "./engine.js";
+import { exportarGradeICS, exportarGradePNG } from "./exportar.js";
 import { sanitizarPdfHistoricoBrowser, sanitizarTextoHistorico } from "./historico_parser.js";
 
 const DIAS = [
@@ -113,12 +114,49 @@ function atualizarMetaUI() {
     `🔒 100% no navegador • Oferta: ${metaDados.oferta_arquivo} • ${metaDados.total_turmas} turmas • ${histTxt}`;
 }
 
+function formatarNomeCurso(c) {
+  return (c || "")
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (l) => l.toUpperCase())
+    .replace(/\b(Em|De|Da|Do|Das|Dos|E)\b/g, (w) => w.toLowerCase())
+    .replace(/^./, (l) => l.toUpperCase());
+}
+
+function cursoAtual() {
+  return document.getElementById("fCurso").value || "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
+}
+
+function labelCategoria(cat) {
+  if (cat === "obrigatoria_bcc") {
+    return cursoAtual() === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO" ? "Obrigatória BCC" : "Do Curso";
+  }
+  return CAT_LABELS[cat] || cat;
+}
+
+function popularCursos(listaCursos) {
+  const select = document.getElementById("fCurso");
+  const salvo = localStorage.getItem("ufabc_web_curso_v1") || "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
+  select.innerHTML = listaCursos
+    .map((c) => {
+      const sufixo = c === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO" ? " (PPC 2023)" : "";
+      return `<option value="${c}">${formatarNomeCurso(c)}${sufixo}</option>`;
+    })
+    .join("");
+  if (listaCursos.includes(salvo)) {
+    select.value = salvo;
+  }
+}
+
 function atualizarTela() {
   if (!motor) return;
   const contarEmCurso = document.getElementById("fContarEmCurso").checked;
+  const curso = cursoAtual();
+  localStorage.setItem("ufabc_web_curso_v1", curso);
+
   turmasVisiveis = motor.analisarOferta({
     historico,
     contarEmCurso,
+    curso,
     campus: document.getElementById("fCampus").value,
     turno: document.getElementById("fTurno").value,
     categoria: document.getElementById("fCategoria").value,
@@ -201,7 +239,7 @@ function renderListaTurmas() {
         </div>
       </div>
       <div class="badges">
-        <span class="badge cat-${rep.categoria}">${CAT_LABELS[rep.categoria] || rep.categoria}</span>
+        <span class="badge cat-${rep.categoria}">${labelCategoria(rep.categoria)}</span>
         <span class="badge rec-${rep.status_recomendacao}">${REC_LABELS[rep.status_recomendacao] || rep.status_recomendacao}</span>
         ${unlockHtml}
         ${rep.status_historico === "em_curso" ? `<span class="badge" style="background:rgba(59,130,246,0.2);color:#93c5fd;">Em curso</span>` : ""}
@@ -343,7 +381,7 @@ function nomesCatalogoMap() {
 }
 
 // Eventos
-["fCampus", "fTurno", "fCategoria", "fOcultarCursadas", "fContarEmCurso", "fApenasRecOk"].forEach((id) => {
+["fCurso", "fCampus", "fTurno", "fCategoria", "fOcultarCursadas", "fContarEmCurso", "fApenasRecOk"].forEach((id) => {
   document.getElementById(id).addEventListener("change", atualizarTela);
 });
 let buscaTimer = null;
@@ -377,6 +415,20 @@ document.querySelectorAll("#planTabs .plan-tab").forEach((btn) => {
   });
 });
 
+document.getElementById("btnExportarPng").addEventListener("click", () => {
+  const selArr = [...selecionadas().values()];
+  if (!selArr.length) return toast("Adicione pelo menos uma turma para exportar.");
+  exportarGradePNG(selArr, planoAtual, formatarNomeCurso(cursoAtual()));
+  toast(`Imagem do Plano ${planoAtual} baixada!`);
+});
+
+document.getElementById("btnExportarIcs").addEventListener("click", () => {
+  const selArr = [...selecionadas().values()];
+  if (!selArr.length) return toast("Adicione pelo menos uma turma para exportar.");
+  exportarGradeICS(selArr, planoAtual);
+  toast(`Calendário .ics do Plano ${planoAtual} baixado!`);
+});
+
 document.getElementById("btnCopiarCodigos").addEventListener("click", async () => {
   const selArr = [...selecionadas().values()];
   if (!selArr.length) return toast("Nenhuma turma selecionada.");
@@ -407,6 +459,7 @@ document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
   const sugs = motor.sugerirGrades({
     historico,
     contarEmCurso: document.getElementById("fContarEmCurso").checked,
+    curso: cursoAtual(),
     campus: document.getElementById("fCampus").value,
     turno: document.getElementById("fTurno").value,
     diasPermitidos: [...diasAtivos],
@@ -548,6 +601,7 @@ async function init() {
     metaDados = await metaRes.json();
     const [oferta, catalogo, grade] = await Promise.all([ofertaRes.json(), catRes.json(), gradeRes.json()]);
     motor = new MotorMatriculaWeb(oferta, catalogo, grade);
+    popularCursos(metaDados.cursos || motor.listarCursosDisponiveis());
     atualizarTela();
   } catch (err) {
     document.getElementById("metaInfo").textContent = `Erro ao carregar dados: ${err.message}`;

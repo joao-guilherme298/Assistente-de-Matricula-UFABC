@@ -201,3 +201,11 @@ def test_api_endpoints_basicos():
         assert len(sugs_full) >= 1
         assert sugs_full[0]["total_creditos"] <= 24
         assert sugs_full[0]["total_disciplinas"] <= 6
+
+        # Testar suporte a outros cursos (ex: Engenharia de Informação e BC&T)
+        assert len(meta["cursos"]) >= 20
+        r_eng = client.get(
+            "/api/turmas?curso=BACHARELADO+EM+ENGENHARIA+DE+INFORMA%C3%87%C3%83O&campus=Todos&turno=Todos&categoria=obrigatoria_bcc"
+        )
+        assert r_eng.status_code == 200
+        assert len(r_eng.json()["turmas"]) > 0

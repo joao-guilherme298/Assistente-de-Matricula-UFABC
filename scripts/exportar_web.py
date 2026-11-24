@@ -25,17 +25,30 @@ def exportar(atualizar_prograd: bool = False) -> None:
         print("🔄 Baixando PDFs mais recentes da PROGRAD...")
         sincronizar_documentos_publicos(DATA_PUBLICO, forcar_download=True)
 
-    # 1. Oferta
+    # 1. Oferta (sempre reparseia do PDF se disponível para garantir campos mais recentes como cursos_oferta)
     ofertas_pdf = sorted(DATA_PUBLICO.glob("*turmas_ofertadas*.pdf"), reverse=True)
     ofertas_cache = sorted(DATA_PUBLICO.glob("*turmas_ofertadas*_cache.json"), reverse=True)
-    if ofertas_pdf and (atualizar_prograd or not ofertas_cache):
+    if ofertas_pdf:
         turmas_raw = [t.model_dump() for t in parse_pdf_oferta(ofertas_pdf[0])]
         oferta_nome = ofertas_pdf[0].name
+        # Atualizar também o cache local em data/publico
+        cache_local = DATA_PUBLICO / f"{ofertas_pdf[0].stem}_cache.json"
+        cache_local.write_text(json.dumps(turmas_raw, ensure_ascii=False, indent=2), encoding="utf-8")
     elif ofertas_cache:
         turmas_raw = json.loads(ofertas_cache[0].read_text(encoding="utf-8"))
         oferta_nome = ofertas_cache[0].name.replace("_cache.json", ".pdf")
     else:
         raise RuntimeError("Nenhuma oferta encontrada em data/publico/.")
+
+    cursos_disponiveis = sorted(
+        {
+            c
+            for t in turmas_raw
+            for c in (t.get("cursos_oferta") or [])
+            if c and c.upper() != "ENGENHARIAS"
+        }
+        | {"BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO", "BACHARELADO EM CIÊNCIA E TECNOLOGIA"}
+    )
 
     # 2. Catálogo (somente campos necessários para manter o JSON leve na web)
     cat_pdf = DATA_PUBLICO / "catalogo_disciplinas.pdf"
@@ -104,6 +117,7 @@ def exportar(atualizar_prograd: bool = False) -> None:
                 "total_turmas": len(turmas_raw),
                 "total_catalogo": len(cat_web),
                 "total_grade": len(grade_web),
+                "cursos": cursos_disponiveis,
             },
             ensure_ascii=False,
             indent=2,
