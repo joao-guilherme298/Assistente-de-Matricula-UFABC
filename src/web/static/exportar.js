@@ -123,16 +123,29 @@ function roundRect(ctx, x, y, w, h, r) {
 /**
  * Renderiza a grade semanal em alta resolução via Canvas e baixa como PNG.
  */
-export function exportarGradePNG(turmas, planoNome = "A", cursoNome = "UFABC") {
+export function exportarGradePNG(turmas, planoNome = "A", cursoNome = "UFABC", semanaVisual = "todas") {
+  const horarioVisivel = (h) =>
+    semanaVisual === "todas" || h.semanalidade === "semanal" || h.semanalidade === semanaVisual;
+
   const horasUsadas = [];
   for (const t of turmas) {
     for (const h of t.horarios || []) {
+      if (!horarioVisivel(h)) continue;
       horasUsadas.push(Math.floor(horaParaFloat(h.inicio)), Math.ceil(horaParaFloat(h.fim)));
     }
   }
   const minHora = horasUsadas.length ? Math.max(7, Math.min(...horasUsadas)) : 8;
   const maxHora = horasUsadas.length ? Math.min(23, Math.max(...horasUsadas)) : 18;
   const totalHoras = Math.max(4, maxHora - minHora);
+
+  const semanaTitulo =
+    semanaVisual === "quinzenal_1"
+      ? " — Quinzenal I"
+      : semanaVisual === "quinzenal_2"
+      ? " — Quinzenal II"
+      : "";
+  const semanaArquivo =
+    semanaVisual === "quinzenal_1" ? "_Q1" : semanaVisual === "quinzenal_2" ? "_Q2" : "";
 
   const scale = 2;
   const W = 1120;
@@ -160,7 +173,7 @@ export function exportarGradePNG(turmas, planoNome = "A", cursoNome = "UFABC") {
   const totalCreds = turmas.reduce((acc, t) => acc + (t.creditos || 0), 0);
   ctx.fillStyle = "#f1f5f9";
   ctx.font = "700 22px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-  ctx.fillText(`Grade UFABC — Plano ${planoNome}`, 24, 36);
+  ctx.fillText(`Grade UFABC — Plano ${planoNome}${semanaTitulo}`, 24, 36);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "500 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
@@ -209,6 +222,7 @@ export function exportarGradePNG(turmas, planoNome = "A", cursoNome = "UFABC") {
   turmas.forEach((t) => {
     const cor = corPorId.get(t.id);
     (t.horarios || []).forEach((h) => {
+      if (!horarioVisivel(h)) return;
       const idxDia = DIAS_ORDEM.indexOf(h.dia);
       if (idxDia === -1) return;
       const ini = horaParaFloat(h.inicio);
@@ -259,6 +273,6 @@ export function exportarGradePNG(turmas, planoNome = "A", cursoNome = "UFABC") {
   });
 
   canvas.toBlob((blob) => {
-    if (blob) baixarBlob(blob, `grade_ufabc_plano_${planoNome}.png`);
+    if (blob) baixarBlob(blob, `grade_ufabc_plano_${planoNome}${semanaArquivo}.png`);
   }, "image/png");
 }

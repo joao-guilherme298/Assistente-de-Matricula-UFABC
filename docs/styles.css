@@ -299,6 +299,19 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.slot-block.q1 { border-left: 3px solid #fde047; }
+.slot-block.q2 { border-left: 3px solid #67e8f9; }
+
+.week-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
 
 .selected-list {
   padding: 12px 16px;

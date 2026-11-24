@@ -30,6 +30,7 @@ const REC_LABELS = {
 let turmasVisiveis = [];
 let diasAtivos = new Set(DIAS.map((d) => d.key));
 let planoAtual = "A";
+let semanaVisual = "todas";
 let planos = { A: new Map(), B: new Map(), C: new Map() };
 let ultimoProgresso = null;
 
@@ -382,13 +383,17 @@ function renderGradeSemanal() {
       for (const t of selArr) {
         for (const hr of t.horarios) {
           if (hr.dia !== d.key) continue;
+          if (semanaVisual !== "todas" && hr.semanalidade !== "semanal" && hr.semanalidade !== semanaVisual) {
+            continue;
+          }
           const iniH = Math.floor(horaParaMin(hr.inicio) / 60);
           const fimH = Math.ceil(horaParaMin(hr.fim) / 60);
           if (h >= iniH && h < fimH) {
-            const sem = hr.semanalidade === "quinzenal_1" ? " (Q1)" : hr.semanalidade === "quinzenal_2" ? " (Q2)" : "";
+            const sem = hr.semanalidade === "quinzenal_1" ? " • Q1" : hr.semanalidade === "quinzenal_2" ? " • Q2" : "";
+            const qClass = hr.semanalidade === "quinzenal_1" ? " q1" : hr.semanalidade === "quinzenal_2" ? " q2" : "";
             const tipo = hr.tipo === "pratica" ? "P" : "T";
             blocos.push(
-              `<div class="slot-block" style="background:${corPorId.get(t.id)}" title="${t.disciplina} (${hr.inicio}-${hr.fim})">${t.disciplina.slice(0, 18)}${t.disciplina.length > 18 ? "…" : ""} [${tipo}${sem}]</div>`
+              `<div class="slot-block${qClass}" style="background:${corPorId.get(t.id)}" title="${t.disciplina} (${hr.inicio}-${hr.fim}${sem})">${t.disciplina.slice(0, 18)}${t.disciplina.length > 18 ? "…" : ""} [${tipo}${sem}]</div>`
             );
           }
         }
@@ -464,10 +469,20 @@ document.querySelectorAll("#planTabs .plan-tab").forEach((btn) => {
   });
 });
 
+document.querySelectorAll("#semanaTabs .plan-tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    semanaVisual = btn.dataset.semana;
+    document.querySelectorAll("#semanaTabs .plan-tab").forEach((b) => {
+      b.classList.toggle("active", b.dataset.semana === semanaVisual);
+    });
+    renderGradeSemanal();
+  });
+});
+
 document.getElementById("btnExportarPng").addEventListener("click", () => {
   const selArr = [...selecionadas().values()];
   if (!selArr.length) return toast("Adicione pelo menos uma turma para exportar.");
-  exportarGradePNG(selArr, planoAtual, formatarNomeCurso(cursoAtual()));
+  exportarGradePNG(selArr, planoAtual, formatarNomeCurso(cursoAtual()), semanaVisual);
   toast(`Imagem do Plano ${planoAtual} baixada!`);
 });
 
