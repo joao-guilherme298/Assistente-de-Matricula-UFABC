@@ -26,9 +26,14 @@ const REC_LABELS = {
 };
 
 let turmasVisiveis = [];
-let turmasCachePorId = new Map();
-let selecionadas = new Map(); // id -> turma
+let diasAtivos = new Set(DIAS.map((d) => d.key));
+let planoAtual = "A";
+let planos = { A: new Map(), B: new Map(), C: new Map() };
 let ultimoProgresso = null;
+
+function selecionadas() {
+  return planos[planoAtual];
+}
 
 function toast(msg) {
   const el = document.getElementById("toast");
@@ -55,8 +60,10 @@ function horariosConflitam(h1, h2) {
 
 function conflitoComSelecionadas(turma) {
   const conflitos = [];
-  for (const sel of selecionadas.values()) {
+  for (const sel of selecionadas().values()) {
     if (sel.id === turma.id) continue;
+    // Se for outra turma da mesma disciplina, o usuário pode trocar diretamente
+    if (chaveDisciplina(sel) === chaveDisciplina(turma)) continue;
     for (const h1 of turma.horarios) {
       for (const h2 of sel.horarios) {
         if (horariosConflitam(h1, h2)) {
@@ -69,17 +76,45 @@ function conflitoComSelecionadas(turma) {
   return [...new Set(conflitos)];
 }
 
-function salvarSelecaoLocal() {
-  localStorage.setItem("ufabc_selecao_v1", JSON.stringify([...selecionadas.values()]));
+function chaveDisciplina(t) {
+  return t.codigo || t.disciplina;
 }
 
-function restaurarSelecaoLocal() {
+function salvarPlanosLocal() {
+  const obj = {
+    planoAtual,
+    A: [...planos.A.values()],
+    B: [...planos.B.values()],
+    C: [...planos.C.values()],
+  };
+  localStorage.setItem("ufabc_planos_v2", JSON.stringify(obj));
+}
+
+function restaurarPlanosLocal() {
   try {
-    const raw = localStorage.getItem("ufabc_selecao_v1");
-    if (!raw) return;
-    const arr = JSON.parse(raw);
-    arr.forEach((t) => selecionadas.set(t.id, t));
+    const rawV2 = localStorage.getItem("ufabc_planos_v2");
+    if (rawV2) {
+      const obj = JSON.parse(rawV2);
+      ["A", "B", "C"].forEach((k) => {
+        (obj[k] || []).forEach((t) => planos[k].set(t.id, t));
+      });
+      if (obj.planoAtual && planos[obj.planoAtual]) planoAtual = obj.planoAtual;
+      atualizarAbasPlano();
+      return;
+    }
+    // Migração suave da seleção v1 para o Plano A
+    const rawV1 = localStorage.getItem("ufabc_selecao_v1");
+    if (rawV1) {
+      JSON.parse(rawV1).forEach((t) => planos.A.set(t.id, t));
+      salvarPlanosLocal();
+    }
   } catch (_) {}
+}
+
+function atualizarAbasPlano() {
+  document.querySelectorAll("#planTabs .plan-tab").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.plan === planoAtual);
+  });
 }
 
 async function carregarMeta() {
@@ -102,6 +137,7 @@ async function carregarTurmas() {
     ocultar_cursadas: document.getElementById("fOcultarCursadas").checked,
     contar_em_curso: document.getElementById("fContarEmCurso").checked,
     apenas_recomendacoes_ok: document.getElementById("fApenasRecOk").checked,
+    dias: [...diasAtivos].join(","),
     busca: document.getElementById("fBusca").value.trim(),
   });
 
@@ -109,7 +145,6 @@ async function carregarTurmas() {
   const data = await res.json();
   turmasVisiveis = data.turmas || [];
   ultimoProgresso = data.progresso;
-  turmasVisiveis.forEach((t) => turmasCachePorId.set(t.id, t));
 
   renderProgresso();
   renderListaTurmas();
@@ -132,58 +167,104 @@ function renderProgresso() {
   document.getElementById("statOl").textContent = `${p.opcoes_limitadas.feitas}`;
 }
 
+function agruparPorDisciplina(lista) {
+  const grupos = new Map();
+  for (const t of lista) {
+    const chave = chaveDisciplina(t);
+    if (!grupos.has(chave)) {
+      grupos.set(chave, { rep: t, turmas: [] });
+    }
+    grupos.get(chave).turmas.push(t);
+  }
+  return [...grupos.values()];
+}
+
 function renderListaTurmas() {
   const container = document.getElementById("listaTurmas");
-  document.getElementById("contadorTurmas").textContent = `${turmasVisiveis.length} encontradas`;
+  const grupos = agruparPorDisciplina(turmasVisiveis);
+  document.getElementById("contadorTurmas").textContent =
+    `${grupos.length} disciplina${grupos.length === 1 ? "" : "s"} (${turmasVisiveis.length} turmas)`;
 
-  if (!turmasVisiveis.length) {
-    container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);">Nenhuma turma encontrada com esses filtros.</div>`;
+  if (!grupos.length) {
+    container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);">Nenhuma disciplina encontrada com esses filtros.</div>`;
     return;
   }
 
+  const selMap = selecionadas();
+  const discsSelecionadas = new Map(); // chaveDisciplina -> turmaId
+  for (const s of selMap.values()) {
+    discsSelecionadas.set(chaveDisciplina(s), s.id);
+  }
+
   const fragment = document.createDocumentFragment();
-  turmasVisiveis.slice(0, 180).forEach((t) => {
-    const isSel = selecionadas.has(t.id);
-    const conflitos = isSel ? [] : conflitoComSelecionadas(t);
+  grupos.slice(0, 120).forEach(({ rep, turmas }) => {
+    const discKey = chaveDisciplina(rep);
+    const turmaSelId = discsSelecionadas.get(discKey);
 
     const card = document.createElement("div");
-    card.className = `turma-card ${isSel ? "selected" : ""} ${conflitos.length ? "conflict" : ""}`;
+    card.className = `turma-card ${turmaSelId ? "selected" : ""}`;
 
-    const recsHtml = t.recomendacoes.length
-      ? `<div class="recs-box"><strong>Recomendações:</strong> ${t.recomendacoes
+    const recsHtml = rep.recomendacoes.length
+      ? `<div class="recs-box"><strong>Recomendações:</strong> ${rep.recomendacoes
           .map((r) => `<span class="${r.cumprida ? "rec-item-ok" : "rec-item-miss"}">${r.cumprida ? "✓" : "•"} ${r.nome}</span>`)
           .join("")}</div>`
       : "";
 
-    const conflitoHtml = conflitos.length
-      ? `<div style="margin-top:6px;font-size:0.78rem;color:#fca5a5;">⚠️ Conflita com: ${conflitos.join(", ")}</div>`
-      : "";
-
-    const btnLabel = isSel ? "✓ Remover" : conflitos.length ? "Conflito" : "+ Adicionar";
-    const btnClass = isSel ? "btn-danger btn-sm" : "btn-primary btn-sm";
+    const unlockHtml =
+      rep.destrava_count > 0
+        ? `<span class="badge badge-unlock" title="Destrava: ${rep.destrava.join(", ")}">🔓 Destrava ${rep.destrava_count}</span>`
+        : "";
 
     card.innerHTML = `
       <div class="turma-top">
         <div>
-          <div class="turma-title">${t.disciplina} ${t.turma ? `(${t.turma})` : ""}</div>
-          <div class="turma-code">${t.id} • ${t.campus} • ${t.turno} • TPEI ${t.tpi || "—"} (${t.creditos} créd.) • ${t.vagas ?? "?"} vagas</div>
+          <div class="turma-title">${rep.disciplina}</div>
+          <div class="turma-code">${rep.codigo || "—"} • TPEI ${rep.tpi || "—"} (${rep.creditos} créd.) • ${turmas.length} turma${turmas.length === 1 ? "" : "s"}</div>
         </div>
-        <button class="${btnClass}" data-id="${t.id}" ${!isSel && conflitos.length ? "disabled" : ""}>${btnLabel}</button>
       </div>
       <div class="badges">
-        <span class="badge cat-${t.categoria}">${CAT_LABELS[t.categoria] || t.categoria}</span>
-        <span class="badge rec-${t.status_recomendacao}">${REC_LABELS[t.status_recomendacao] || t.status_recomendacao}</span>
-        ${t.status_historico === "em_curso" ? `<span class="badge" style="background:rgba(59,130,246,0.2);color:#93c5fd;">Em curso</span>` : ""}
-      </div>
-      <div class="turma-meta">
-        <div>🕒 ${t.horarios_raw || "Horário não informado"}</div>
-        <div>👩‍🏫 ${[t.docente_teoria, t.docente_pratica].filter(Boolean).join(" | ") || "Docente não informado"}</div>
+        <span class="badge cat-${rep.categoria}">${CAT_LABELS[rep.categoria] || rep.categoria}</span>
+        <span class="badge rec-${rep.status_recomendacao}">${REC_LABELS[rep.status_recomendacao] || rep.status_recomendacao}</span>
+        ${unlockHtml}
+        ${rep.status_historico === "em_curso" ? `<span class="badge" style="background:rgba(59,130,246,0.2);color:#93c5fd;">Em curso</span>` : ""}
       </div>
       ${recsHtml}
-      ${conflitoHtml}
+      <div class="turmas-sublist"></div>
     `;
 
-    card.querySelector("button").addEventListener("click", () => toggleTurma(t));
+    const sublist = card.querySelector(".turmas-sublist");
+    turmas.forEach((t) => {
+      const isSel = selMap.has(t.id);
+      const conflitos = isSel ? [] : conflitoComSelecionadas(t);
+      const outraTurmaDaMesma = Boolean(turmaSelId && turmaSelId !== t.id);
+
+      const row = document.createElement("div");
+      row.className = `turma-row ${isSel ? "selected" : ""} ${conflitos.length ? "conflict" : ""}`;
+
+      const btnLabel = isSel
+        ? "✓ Remover"
+        : conflitos.length
+        ? "Conflito"
+        : outraTurmaDaMesma
+        ? "Trocar"
+        : "+ Adicionar";
+      const btnClass = isSel ? "btn-danger btn-sm" : outraTurmaDaMesma ? "btn-secondary btn-sm" : "btn-primary btn-sm";
+      const docentes = [t.docente_teoria, t.docente_pratica].filter(Boolean).join(" | ") || "Docente não informado";
+
+      row.innerHTML = `
+        <div class="turma-row-info">
+          <div class="turma-row-main">${t.turma || t.turno} • ${t.campus} • ${t.vagas ?? "?"} vagas <span style="font-family:monospace;font-weight:400;color:var(--muted);">(${t.id})</span></div>
+          <div class="turma-row-sub">🕒 ${t.horarios_raw || "Horário não informado"}</div>
+          <div class="turma-row-sub">👩‍🏫 ${docentes}</div>
+          ${conflitos.length ? `<div class="turma-row-sub" style="color:#fca5a5;">⚠️ Conflita com: ${conflitos.join(", ")}</div>` : ""}
+        </div>
+        <button class="${btnClass}" ${!isSel && conflitos.length ? "disabled" : ""}>${btnLabel}</button>
+      `;
+
+      row.querySelector("button").addEventListener("click", () => toggleTurma(t));
+      sublist.appendChild(row);
+    });
+
     fragment.appendChild(card);
   });
 
@@ -192,17 +273,25 @@ function renderListaTurmas() {
 }
 
 function toggleTurma(turma) {
-  if (selecionadas.has(turma.id)) {
-    selecionadas.delete(turma.id);
+  const selMap = selecionadas();
+  if (selMap.has(turma.id)) {
+    selMap.delete(turma.id);
   } else {
     const conflitos = conflitoComSelecionadas(turma);
     if (conflitos.length) {
       toast(`Conflito de horário com: ${conflitos.join(", ")}`);
       return;
     }
-    selecionadas.set(turma.id, turma);
+    // Se já havia outra turma da mesma disciplina no plano, substitui automaticamente
+    const discKey = chaveDisciplina(turma);
+    for (const [idExistente, tExistente] of selMap.entries()) {
+      if (chaveDisciplina(tExistente) === discKey) {
+        selMap.delete(idExistente);
+      }
+    }
+    selMap.set(turma.id, turma);
   }
-  salvarSelecaoLocal();
+  salvarPlanosLocal();
   renderListaTurmas();
   renderGradeSemanal();
 }
@@ -211,12 +300,11 @@ function renderGradeSemanal() {
   const table = document.getElementById("gradeSemanal");
   const listaSel = document.getElementById("listaSelecionadas");
 
-  const selArr = [...selecionadas.values()];
+  const selArr = [...selecionadas().values()];
   const totalCreds = selArr.reduce((acc, t) => acc + (t.creditos || 0), 0);
-  document.getElementById("statGrade").textContent = `${selArr.length} turma${selArr.length === 1 ? "" : "s"}`;
+  document.getElementById("statGrade").textContent = `Plano ${planoAtual}: ${selArr.length} turma${selArr.length === 1 ? "" : "s"}`;
   document.getElementById("statCreditos").textContent = `${totalCreds} créditos selecionados`;
 
-  // Mapear cor por disciplina selecionada
   const corPorId = new Map();
   selArr.forEach((t, idx) => corPorId.set(t.id, CORES[idx % CORES.length]));
 
@@ -247,7 +335,7 @@ function renderGradeSemanal() {
   table.innerHTML = html;
 
   if (!selArr.length) {
-    listaSel.innerHTML = `<div style="font-size:0.82rem;color:var(--muted);text-align:center;">Clique em "+ Adicionar" nas turmas à esquerda para montar sua grade.</div>`;
+    listaSel.innerHTML = `<div style="font-size:0.82rem;color:var(--muted);text-align:center;">Clique em "+ Adicionar" à esquerda ou em "✨ Sugerir grade" para montar o Plano ${planoAtual}.</div>`;
     return;
   }
 
@@ -267,13 +355,13 @@ function renderGradeSemanal() {
 }
 
 window.removerSelecionada = function (id) {
-  selecionadas.delete(id);
-  salvarSelecaoLocal();
+  selecionadas().delete(id);
+  salvarPlanosLocal();
   renderListaTurmas();
   renderGradeSemanal();
 };
 
-// Eventos de filtros
+// Filtros principais
 ["fCampus", "fTurno", "fCategoria", "fOcultarCursadas", "fContarEmCurso", "fApenasRecOk"].forEach((id) => {
   document.getElementById(id).addEventListener("change", carregarTurmas);
 });
@@ -283,21 +371,126 @@ document.getElementById("fBusca").addEventListener("input", () => {
   buscaTimer = setTimeout(carregarTurmas, 220);
 });
 
+// Pílulas de dias da semana
+document.querySelectorAll("#diasPills .dia-pill").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const dia = btn.dataset.dia;
+    if (diasAtivos.has(dia)) {
+      if (diasAtivos.size === 1) return toast("Mantenha pelo menos 1 dia ativo.");
+      diasAtivos.delete(dia);
+      btn.classList.remove("active");
+    } else {
+      diasAtivos.add(dia);
+      btn.classList.add("active");
+    }
+    carregarTurmas();
+  });
+});
+
+// Abas Plano A / B / C
+document.querySelectorAll("#planTabs .plan-tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    planoAtual = btn.dataset.plan;
+    atualizarAbasPlano();
+    salvarPlanosLocal();
+    renderListaTurmas();
+    renderGradeSemanal();
+  });
+});
+
 // Copiar códigos e limpar grade
 document.getElementById("btnCopiarCodigos").addEventListener("click", async () => {
-  const selArr = [...selecionadas.values()];
+  const selArr = [...selecionadas().values()];
   if (!selArr.length) return toast("Nenhuma turma selecionada.");
   const texto = selArr.map((t) => `${t.id} - ${t.disciplina} (${t.horarios_raw})`).join("\n");
   await navigator.clipboard.writeText(texto);
-  toast("Códigos copiados para a área de transferência!");
+  toast(`Códigos do Plano ${planoAtual} copiados!`);
 });
 
 document.getElementById("btnLimparGrade").addEventListener("click", () => {
-  selecionadas.clear();
-  salvarSelecaoLocal();
+  selecionadas().clear();
+  salvarPlanosLocal();
   renderListaTurmas();
   renderGradeSemanal();
-  toast("Grade limpa.");
+  toast(`Plano ${planoAtual} limpo.`);
+});
+
+// Modal Sugerir Grade
+const modalSug = document.getElementById("modalSugerir");
+document.getElementById("btnAbrirSugerir").addEventListener("click", () => {
+  document.getElementById("resultadoSugestoes").innerHTML = "";
+  modalSug.classList.add("open");
+});
+document.getElementById("btnFecharSugerir").addEventListener("click", () => modalSug.classList.remove("open"));
+
+document.getElementById("btnGerarSugestoes").addEventListener("click", async () => {
+  const container = document.getElementById("resultadoSugestoes");
+  container.innerHTML = `<div style="font-size:0.82rem;color:var(--muted);">Calculando combinações sem conflito...</div>`;
+
+  const body = {
+    campus: document.getElementById("fCampus").value,
+    turno: document.getElementById("fTurno").value,
+    dias_permitidos: [...diasAtivos],
+    contar_em_curso: document.getElementById("fContarEmCurso").checked,
+    apenas_recomendacoes_ok: document.getElementById("sugSoRecOk").checked,
+    min_creditos: parseInt(document.getElementById("sugMinCred").value, 10) || 12,
+    max_creditos: parseInt(document.getElementById("sugMaxCred").value, 10) || 20,
+    max_disciplinas: parseInt(document.getElementById("sugMaxDisc").value, 10) || 5,
+    completar_com_leves: document.getElementById("sugCompletarLeves").checked,
+  };
+
+  const res = await fetch("/api/sugerir-grade", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  const sugs = data.sugestoes || [];
+
+  if (!sugs.length) {
+    container.innerHTML = `<div style="font-size:0.82rem;color:#fca5a5;">Nenhuma combinação encontrada. Tente ampliar os créditos ou desmarcar "Somente recomendações cumpridas".</div>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  sugs.forEach((s) => {
+    const card = document.createElement("div");
+    card.className = "sugestao-card";
+    card.innerHTML = `
+      <div class="sugestao-head">
+        <div>
+          <strong>Opção ${s.opcao}</strong>
+          <span style="font-size:0.78rem;color:var(--muted);margin-left:6px;">
+            ${s.total_disciplinas} matérias • ${s.total_creditos} créditos • ${s.obrigatorias_bcc} obrig. BCC
+          </span>
+        </div>
+        <button class="btn-primary btn-sm">Aplicar no Plano ${planoAtual}</button>
+      </div>
+      <ul class="sugestao-list">
+        ${s.turmas
+          .map(
+            (t) =>
+              `<li><strong>${t.disciplina}</strong> (${t.turma || t.turno}) ${
+                t.preenchimento_leve
+                  ? `<span class="badge cat-${t.categoria}" style="font-size:0.68rem;">Complemento leve</span>`
+                  : ""
+              } — ${t.creditos} créd. • ${t.horarios_raw}</li>`
+          )
+          .join("")}
+      </ul>
+    `;
+    card.querySelector("button").addEventListener("click", () => {
+      const selMap = selecionadas();
+      selMap.clear();
+      s.turmas.forEach((t) => selMap.set(t.id, t));
+      salvarPlanosLocal();
+      modalSug.classList.remove("open");
+      renderListaTurmas();
+      renderGradeSemanal();
+      toast(`Opção ${s.opcao} aplicada no Plano ${planoAtual}!`);
+    });
+    container.appendChild(card);
+  });
 });
 
 // Modal Histórico
@@ -389,5 +582,5 @@ document.getElementById("btnSincronizar").addEventListener("click", async () => 
 });
 
 // Inicialização
-restaurarSelecaoLocal();
+restaurarPlanosLocal();
 carregarMeta().then(carregarTurmas);

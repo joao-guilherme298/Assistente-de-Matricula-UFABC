@@ -111,6 +111,71 @@ button {
 .toggles { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding-bottom: 4px; }
 .toggle-label { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text); cursor: pointer; }
 
+.dias-pills { display: flex; gap: 5px; }
+.dia-pill {
+  padding: 5px 9px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.dia-pill.active {
+  background: rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
+  border-color: var(--primary);
+}
+
+.plan-tabs { display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 8px; border: 1px solid var(--border); }
+.plan-tab {
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+.plan-tab.active { background: var(--primary); color: #fff; }
+
+.badge-unlock { background: rgba(245, 158, 11, 0.16); color: #fde68a; cursor: help; }
+
+.turmas-sublist {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(51, 65, 85, 0.7);
+  padding-top: 8px;
+}
+.turma-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid transparent;
+  font-size: 0.8rem;
+}
+.turma-row.selected { border-color: var(--primary); background: rgba(59, 130, 246, 0.14); }
+.turma-row.conflict { opacity: 0.65; border-color: rgba(239, 68, 68, 0.35); }
+.turma-row-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.turma-row-main { font-weight: 600; color: var(--text); }
+.turma-row-sub { font-size: 0.75rem; color: var(--muted); }
+
+.sugestao-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.sugestao-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.sugestao-list { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+.sugestao-list strong { color: var(--text); }
+
 /* Layout principal */
 .main-grid {
   display: grid;

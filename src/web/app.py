@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -26,9 +27,6 @@ DATA_PUBLICO = BASE_DIR / "data" / "publico"
 DATA_PRIVADO = BASE_DIR / "data" / "privado"
 HISTORICO_JSON = DATA_PRIVADO / "materias_cursadas.json"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-
-app = FastAPI(title="Assistente de Matrícula UFABC — BCC")
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 class EstadoAplicacao:
@@ -108,12 +106,17 @@ class EstadoAplicacao:
 estado = EstadoAplicacao()
 
 
-@app.on_event("startup")
-def startup_event() -> None:
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
     try:
         estado.carregar()
     except Exception as exc:
         print(f"[AVISO] Falha ao carregar dados iniciais: {exc}")
+    yield
+
+
+app = FastAPI(title="Assistente de Matrícula UFABC — BCC", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/")
@@ -148,10 +151,12 @@ def listar_turmas(
     ocultar_cursadas: bool = True,
     apenas_recomendacoes_ok: bool = False,
     contar_em_curso: bool = True,
+    dias: str = "",
     busca: str = "",
 ) -> dict:
     if not estado.motor:
         raise HTTPException(status_code=503, detail="Base ainda não carregada.")
+    dias_list = [d.strip() for d in dias.split(",") if d.strip()] if dias.strip() else None
     turmas = estado.motor.analisar_oferta(
         historico=estado.historico,
         contar_em_curso=contar_em_curso,
@@ -160,6 +165,7 @@ def listar_turmas(
         categoria=categoria,
         ocultar_cursadas=ocultar_cursadas,
         apenas_recomendacoes_ok=apenas_recomendacoes_ok,
+        dias_permitidos=dias_list,
         busca=busca,
     )
     progresso = estado.motor.resumo_progresso(
@@ -167,6 +173,37 @@ def listar_turmas(
         contar_em_curso=contar_em_curso,
     )
     return {"turmas": turmas, "progresso": progresso}
+
+
+class SugerirGradeRequest(BaseModel):
+    campus: str = "Santo André"
+    turno: str = "Matutino"
+    dias_permitidos: Optional[list[str]] = None
+    contar_em_curso: bool = True
+    apenas_recomendacoes_ok: bool = True
+    min_creditos: int = 12
+    max_creditos: int = 20
+    max_disciplinas: int = 5
+    completar_com_leves: bool = False
+
+
+@app.post("/api/sugerir-grade")
+def sugerir_grade(req: SugerirGradeRequest) -> dict:
+    if not estado.motor:
+        raise HTTPException(status_code=503, detail="Base ainda não carregada.")
+    sugestoes = estado.motor.sugerir_grades(
+        historico=estado.historico,
+        contar_em_curso=req.contar_em_curso,
+        campus=req.campus,
+        turno=req.turno,
+        dias_permitidos=req.dias_permitidos,
+        apenas_recomendacoes_ok=req.apenas_recomendacoes_ok,
+        min_creditos=req.min_creditos,
+        max_creditos=req.max_creditos,
+        max_disciplinas=req.max_disciplinas,
+        completar_com_leves=req.completar_com_leves,
+    )
+    return {"sugestoes": sugestoes}
 
 
 class ConflitoRequest(BaseModel):

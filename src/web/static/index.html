@@ -74,6 +74,17 @@
         <label for="fBusca">Buscar disciplina, código ou docente</label>
         <input type="text" id="fBusca" placeholder="Ex: Compiladores, MCCC006, Grafos..." />
       </div>
+      <div class="field">
+        <label>Dias livres / permitidos</label>
+        <div class="dias-pills" id="diasPills">
+          <button type="button" class="dia-pill active" data-dia="segunda">Seg</button>
+          <button type="button" class="dia-pill active" data-dia="terca">Ter</button>
+          <button type="button" class="dia-pill active" data-dia="quarta">Qua</button>
+          <button type="button" class="dia-pill active" data-dia="quinta">Qui</button>
+          <button type="button" class="dia-pill active" data-dia="sexta">Sex</button>
+          <button type="button" class="dia-pill active" data-dia="sabado">Sáb</button>
+        </div>
+      </div>
       <div class="toggles">
         <label class="toggle-label">
           <input type="checkbox" id="fOcultarCursadas" checked />
@@ -103,9 +114,17 @@
       <!-- Grade semanal -->
       <div class="panel">
         <div class="panel-header">
-          <h2>Grade Semanal</h2>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-primary btn-sm" id="btnCopiarCodigos">📋 Copiar códigos</button>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h2>Grade Semanal</h2>
+            <div class="plan-tabs" id="planTabs">
+              <button type="button" class="plan-tab active" data-plan="A">Plano A</button>
+              <button type="button" class="plan-tab" data-plan="B">Plano B</button>
+              <button type="button" class="plan-tab" data-plan="C">Plano C</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn-secondary btn-sm" id="btnAbrirSugerir">✨ Sugerir grade</button>
+            <button class="btn-primary btn-sm" id="btnCopiarCodigos">📋 Copiar</button>
             <button class="btn-danger btn-sm" id="btnLimparGrade">Limpar</button>
           </div>
         </div>
@@ -161,6 +180,43 @@
       <div id="conteudoPendentes" style="font-size:0.85rem;margin-top:10px;"></div>
       <div class="modal-footer">
         <button class="btn-secondary" id="btnFecharPendentes">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Sugerir Grade -->
+  <div class="modal-backdrop" id="modalSugerir">
+    <div class="modal">
+      <h3>✨ Sugerir Grade Automática</h3>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">
+        Monta combinações sem conflito usando seus filtros atuais (campus, turno e dias selecionados), priorizando obrigatórias do BCC e matérias que destravam mais disciplinas futuras.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+        <div class="field">
+          <label for="sugMinCred">Mín. créditos</label>
+          <input type="text" id="sugMinCred" value="12" style="min-width:0;" />
+        </div>
+        <div class="field">
+          <label for="sugMaxCred">Máx. créditos</label>
+          <input type="text" id="sugMaxCred" value="20" style="min-width:0;" />
+        </div>
+        <div class="field">
+          <label for="sugMaxDisc">Máx. matérias</label>
+          <input type="text" id="sugMaxDisc" value="5" style="min-width:0;" />
+        </div>
+      </div>
+      <label class="toggle-label" style="margin-bottom:8px;">
+        <input type="checkbox" id="sugSoRecOk" checked />
+        Somente matérias com recomendações cumpridas
+      </label>
+      <label class="toggle-label" style="margin-bottom:12px;">
+        <input type="checkbox" id="sugCompletarLeves" />
+        Completar créditos restantes com livres/limitadas mais leves (sem pré-requisitos)
+      </label>
+      <button class="btn-primary" id="btnGerarSugestoes">Gerar opções</button>
+      <div id="resultadoSugestoes" style="margin-top:12px;"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnFecharSugerir">Fechar</button>
       </div>
     </div>
   </div>

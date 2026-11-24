@@ -152,3 +152,52 @@ def test_api_endpoints_basicos():
         assert r_turmas.status_code == 200
         payload = r_turmas.json()
         assert len(payload["turmas"]) > 0
+        # Verificar campo de destravamento calculado pelo grafo
+        assert "destrava_count" in payload["turmas"][0]
+
+        # Testar filtro de dias (excluindo sexta)
+        r_sem_sexta = client.get(
+            "/api/turmas?campus=Santo+Andr%C3%A9&turno=Matutino&dias=segunda,terca,quarta,quinta"
+        )
+        assert r_sem_sexta.status_code == 200
+        for t in r_sem_sexta.json()["turmas"]:
+            for h in t["horarios"]:
+                assert h["dia"] != "sexta"
+
+        # Testar gerador automático de sugestões de grade sem conflitos
+        r_sug = client.post(
+            "/api/sugerir-grade",
+            json={
+                "campus": "Santo André",
+                "turno": "Matutino",
+                "dias_permitidos": ["segunda", "terca", "quarta", "quinta"],
+                "apenas_recomendacoes_ok": False,
+                "min_creditos": 8,
+                "max_creditos": 16,
+                "max_disciplinas": 4,
+            },
+        )
+        assert r_sug.status_code == 200
+        sugestoes = r_sug.json()["sugestoes"]
+        assert len(sugestoes) >= 1
+        assert sugestoes[0]["total_creditos"] <= 16
+        assert sugestoes[0]["total_disciplinas"] <= 4
+
+        # Testar preenchimento de créditos restantes com livres/limitadas leves
+        r_sug_full = client.post(
+            "/api/sugerir-grade",
+            json={
+                "campus": "Santo André",
+                "turno": "Matutino",
+                "apenas_recomendacoes_ok": False,
+                "min_creditos": 12,
+                "max_creditos": 24,
+                "max_disciplinas": 6,
+                "completar_com_leves": True,
+            },
+        )
+        assert r_sug_full.status_code == 200
+        sugs_full = r_sug_full.json()["sugestoes"]
+        assert len(sugs_full) >= 1
+        assert sugs_full[0]["total_creditos"] <= 24
+        assert sugs_full[0]["total_disciplinas"] <= 6
