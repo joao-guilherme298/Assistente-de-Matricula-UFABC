@@ -12,17 +12,42 @@ Ferramenta **100% local** para facilitar a montagem da grade quadrimestral da UF
 - Ao importar pelo navegador (ou via `sanitizar_historico.py`), o PDF é lido apenas em memória, **descarta nome, CPF, RG, RA e cabeçalho** e salva somente um JSON anônimo com os códigos/nomes das matérias cursadas (e em curso) em `data/privado/materias_cursadas.json` (já ignorado no `.gitignore`).
 - Também é possível colar apenas a lista de disciplinas do SIGAA, sem nem selecionar o PDF.
 
-## 🚀 Como rodar (você ou seus amigos)
+## 🚀 Como rodar no seu computador
 
+### Pré-requisitos
+- **Python 3.9+** instalado ([python.org](https://www.python.org/downloads/))
+
+### 1. Baixe o projeto
 ```bash
-cd ufabc-matricula
+git clone https://github.com/joao-guilherme298/Assistente-de-Matricula-UFABC.git
+cd Assistente-de-Matricula-UFABC
+```
+
+### 2. Instale as dependências e inicie
+
+**macOS / Linux:**
+```bash
 python3 -m venv .venv
-source .venv/bin/activate   # No Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
 python3 run.py
 ```
 
-Depois abra no navegador: **http://127.0.0.1:8000**
+**Windows (PowerShell ou CMD):**
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python run.py
+```
+
+### 3. Abra no navegador
+Com o servidor rodando, acesse **[http://localhost:8000](http://localhost:8000)** (roda 100% no seu computador):
+1. Clique em **"🔒 Importar Histórico"** e envie o PDF do seu histórico do SIGAA (ou cole o texto das disciplinas).
+2. Selecione o seu **Campus** e **Turno** nos filtros.
+3. Clique em **"+ Adicionar"** nas turmas para montar sua grade semanal sem conflitos de horário.
+
+> **Dica para os próximos quadrimestres:** clique em **"🔄 Atualizar PDFs PROGRAD"** no topo da página para baixar automaticamente a nova lista de turmas ofertadas.
 
 ## 🧭 Recursos
 - Filtros dinâmicos por **Campus** (Santo André / São Bernardo / Todos), **Turno** (Matutino / Noturno / Todos), **Categoria** (Obrigatórias BCC, BC&T, Opções Limitadas, Livres) e busca por nome/código/professor.
