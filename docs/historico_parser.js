@@ -4,7 +4,17 @@
 import { normalizarTexto } from "./engine.js";
 
 const CODIGO_UFABC_RE = /\b([A-Z]{2,5}\d{3,4}-\d{2})\b/;
-const CPF_RE = /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/;
+// Padrões defensivos de PII (CPF, RG, RA de 11 dígitos, e-mail) que nunca podem entrar na saída
+const PII_RE = /(\b\d{3}\.\d{3}\.\d{3}-\d{2}\b|\b\d{1,2}\.\d{3}\.\d{3}-[\dX]\b|\b\d{11}\b|\S+@\S+\.\S+)/i;
+
+function limparNomeSeguro(nome, codigo, nomesPorCodigo) {
+  let n = (nome || "").trim().slice(0, 140);
+  if ((!n || n.length < 3 || PII_RE.test(n)) && codigo && nomesPorCodigo.has(codigo)) {
+    n = nomesPorCodigo.get(codigo);
+  }
+  if (!n || PII_RE.test(n)) return codigo || "";
+  return n;
+}
 
 const SIT_APROVADO = new Set(["APR", "APRN", "CUMP", "APROVADO", "APROVADA", "CUMPRIU"]);
 const SIT_EQUIV = new Set(["DISP", "TRANS", "INCORP", "DISPENSADO", "TRANSFERIDO", "INCORPORADO"]);
@@ -85,10 +95,7 @@ export function sanitizarTextoHistorico(texto, nomesPorCodigo = new Map()) {
       .replace(/\s+[A-FO]\s*$/, "")
       .trim();
 
-    if ((!nome || nome.length < 3 || CPF_RE.test(nome)) && nomesPorCodigo.has(codigo)) {
-      nome = nomesPorCodigo.get(codigo);
-    }
-    if (!nome || CPF_RE.test(nome)) nome = codigo;
+    nome = limparNomeSeguro(nome, codigo, nomesPorCodigo);
 
     const mCred = pos.match(/\b(\d{1,2})\s+(\d{2,3})\s+(\d{1,3})\b/);
     const creditos = mCred ? parseInt(mCred[1], 10) : 0;
@@ -101,7 +108,8 @@ export function sanitizarTextoHistorico(texto, nomesPorCodigo = new Map()) {
       nome,
       nome_norm: normalizarTexto(nome),
       status,
-      conceito,
+      // Minimização de dados: nunca armazenamos notas/conceitos individuais
+      conceito: "",
       categoria_hist,
       creditos,
       ch_ext,
@@ -126,6 +134,12 @@ export async function sanitizarPdfHistoricoBrowser(file, nomesPorCodigo = new Ma
   }
 
   const arrayBuffer = await file.arrayBuffer();
+  // Validar assinatura mágica %PDF- antes de entregar ao parser
+  const headerBytes = new Uint8Array(arrayBuffer.slice(0, 5));
+  const headerStr = String.fromCharCode(...headerBytes);
+  if (headerStr !== "%PDF-") {
+    throw new Error("Arquivo inválido: selecione o PDF oficial gerado pelo SIGAA.");
+  }
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const mapa = new Map();
   let textoFallback = "";
@@ -237,12 +251,9 @@ export async function sanitizarPdfHistoricoBrowser(file, nomesPorCodigo = new Ma
         .replace(/--.*$/, "")
         .trim();
 
-      if (codigo && nomesPorCodigo.has(codigo)) {
-        nome = nomesPorCodigo.get(codigo);
-      }
+      nome = limparNomeSeguro(nome, codigo, nomesPorCodigo);
       if (!codigo && (!nome || nome.length < 4)) continue;
       if (codigo === "ENADE" || nome.toUpperCase().includes("ENADE")) continue;
-      if (CPF_RE.test(nome)) nome = codigo;
 
       // Extrair categoria (OBR/OL/LIV/ATC) e créditos / CH EXT da linha do SIGAA
       const tokensLinha = linhaAtual.items.map((it) => it.str.trim());

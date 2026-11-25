@@ -38,6 +38,15 @@ function selecionadas() {
   return planos[planoAtual];
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function toast(msg) {
   const el = document.getElementById("toast");
   el.textContent = msg;
@@ -429,21 +438,23 @@ function renderGradeSemanal() {
       <div class="selected-item">
         <div>
           <strong style="color:${corPorId.get(t.id)}">●</strong>
-          <strong>${t.disciplina}</strong> (${t.turma || t.turno})
-          <div style="font-size:0.75rem;color:var(--muted);font-family:monospace;">${t.id} • ${t.horarios_raw}</div>
+          <strong>${escapeHtml(t.disciplina)}</strong> (${escapeHtml(t.turma || t.turno)})
+          <div style="font-size:0.75rem;color:var(--muted);font-family:monospace;">${escapeHtml(t.id)} • ${escapeHtml(t.horarios_raw)}</div>
         </div>
-        <button class="btn-danger btn-sm" onclick="removerSelecionada('${t.id}')">Remover</button>
+        <button class="btn-danger btn-sm" data-remove-id="${escapeHtml(t.id)}">Remover</button>
       </div>`
     )
     .join("");
-}
 
-window.removerSelecionada = function (id) {
-  selecionadas().delete(id);
-  salvarPlanosLocal();
-  renderListaTurmas();
-  renderGradeSemanal();
-};
+  listaSel.querySelectorAll("[data-remove-id]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selecionadas().delete(btn.dataset.removeId);
+      salvarPlanosLocal();
+      renderListaTurmas();
+      renderGradeSemanal();
+    });
+  });
+}
 
 // Filtros principais
 ["fCurso", "fCampus", "fTurno", "fCategoria", "fOcultarCursadas", "fContarEmCurso", "fApenasRecOk"].forEach((id) => {
@@ -665,13 +676,13 @@ async function abrirModalEmenta(turma) {
 
   const partes = [];
   if (cat.encontrada && cat.recomendacoes && cat.recomendacoes.length) {
-    partes.push(`<div><strong>Recomendações:</strong><p style="color:var(--muted);margin-top:4px;">${cat.recomendacoes.join("; ")}</p></div>`);
+    partes.push(`<div><strong>Recomendações:</strong><p style="color:var(--muted);margin-top:4px;">${escapeHtml(cat.recomendacoes.join("; "))}</p></div>`);
   }
   if (cat.encontrada && cat.objetivos) {
-    partes.push(`<div><strong>Objetivos:</strong><p style="color:var(--muted);margin-top:4px;">${cat.objetivos}</p></div>`);
+    partes.push(`<div><strong>Objetivos:</strong><p style="color:var(--muted);margin-top:4px;">${escapeHtml(cat.objetivos)}</p></div>`);
   }
   if (cat.encontrada && cat.ementa) {
-    partes.push(`<div><strong>Ementa:</strong><p style="color:var(--muted);margin-top:4px;">${cat.ementa}</p></div>`);
+    partes.push(`<div><strong>Ementa:</strong><p style="color:var(--muted);margin-top:4px;">${escapeHtml(cat.ementa)}</p></div>`);
   }
   if (!partes.length) {
     partes.push(`<p style="color:var(--muted);">Ementa não encontrada no Catálogo 2025–2026 para esta disciplina.</p>`);

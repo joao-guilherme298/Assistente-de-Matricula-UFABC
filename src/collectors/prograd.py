@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -13,6 +13,19 @@ PROGRAD_URLS = {
     "catalogo": "https://prograd.ufabc.edu.br/catalogos-de-disciplinas",
     "bcc": "https://prograd.ufabc.edu.br/cursos/17",
 }
+
+MAX_DOWNLOAD_BYTES = 35 * 1024 * 1024  # 35 MB
+
+
+def _validar_url_ufabc(url: str) -> str:
+    """Garante que downloads ocorram exclusivamente em domínios oficiais *.ufabc.edu.br."""
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme not in ("https", "http"):
+        raise ValueError(f"Esquema de URL não permitido: {parsed.scheme}")
+    if host != "ufabc.edu.br" and not host.endswith(".ufabc.edu.br"):
+        raise ValueError(f"Domínio não autorizado para download: {host}")
+    return url
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; UFABCMatriculaHelper/1.0; +local)"
@@ -107,12 +120,30 @@ def descobrir_url_ppc_bcc(client: httpx.Client) -> Optional[str]:
 
 
 def baixar_arquivo(client: httpx.Client, url: str, destino: Path) -> Path:
+    _validar_url_ufabc(url)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    with client.stream("GET", url, follow_redirects=True) as r:
-        r.raise_for_status()
-        with destino.open("wb") as f:
-            for chunk in r.iter_bytes():
-                f.write(chunk)
+    tmp = destino.with_suffix(destino.suffix + ".tmp")
+    total = 0
+    primeiro_chunk = True
+    try:
+        with client.stream("GET", url, follow_redirects=True) as r:
+            r.raise_for_status()
+            _validar_url_ufabc(str(r.url))
+            with tmp.open("wb") as f:
+                for chunk in r.iter_bytes():
+                    if primeiro_chunk:
+                        if not chunk.startswith(b"%PDF-"):
+                            raise ValueError(f"Conteúdo baixado não é um PDF válido: {r.url}")
+                        primeiro_chunk = False
+                    total += len(chunk)
+                    if total > MAX_DOWNLOAD_BYTES:
+                        raise ValueError(f"Arquivo excede o limite de {MAX_DOWNLOAD_BYTES} bytes.")
+                    f.write(chunk)
+        tmp.replace(destino)
+    except Exception:
+        if tmp.exists():
+            tmp.unlink()
+        raise
     return destino
 
 

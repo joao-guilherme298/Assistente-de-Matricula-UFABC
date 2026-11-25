@@ -5,16 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
+    content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self';"
   />
   <meta name="referrer" content="no-referrer" />
   <title>Assistente de Matrícula UFABC</title>
-  <link rel="stylesheet" href="./styles.css?v=6" />
+  <link rel="stylesheet" href="./styles.css?v=7" />
   <script
-    src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"
+    src="./vendor/pdfjs/pdf.min.js"
     integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e"
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
   ></script>
 </head>
 <body>
@@ -165,10 +163,15 @@
     <div class="modal">
       <h3>🔒 Importar Histórico Escolar (100% no Navegador)</h3>
       <div class="privacy-note">
-        <strong>Privacidade total:</strong> Este site não tem servidor. Seu PDF é lido localmente dentro da sua própria aba do navegador —
-        <strong>nenhum dado sai do seu computador</strong>. Nome, CPF, RG e RA são descartados imediatamente;
-        apenas os códigos das matérias cursadas ficam salvos no <code>localStorage</code> do seu navegador.
+        <strong>Privacidade total:</strong> Este site não tem servidor e faz <strong>zero conexões externas</strong>.
+        Seu PDF é lido localmente dentro da sua aba do navegador — nenhum dado sai do seu aparelho.
+        Nome, CPF, RG, RA e conceitos (notas) são descartados imediatamente; apenas os códigos das matérias são mantidos.
       </div>
+
+      <label class="toggle-label" style="margin-bottom:14px;">
+        <input type="checkbox" id="chkSalvarHistoricoLocal" checked />
+        Salvar histórico neste navegador (desmarque em computadores compartilhados / laboratórios)
+      </label>
 
       <div style="margin-bottom:14px;">
         <label style="display:block;font-size:0.84rem;font-weight:600;margin-bottom:6px;">
@@ -262,6 +265,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script type="module" src="./app.js?v=6"></script>
+  <script type="module" src="./app.js?v=7"></script>
 </body>
 </html>

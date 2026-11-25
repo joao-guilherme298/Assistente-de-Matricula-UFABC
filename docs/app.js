@@ -3,8 +3,7 @@ import { exportarGradeICS, exportarGradePNG } from "./exportar.js";
 import { sanitizarPdfHistoricoBrowser, sanitizarTextoHistorico } from "./historico_parser.js";
 
 if (window.pdfjsLib) {
-  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "./vendor/pdfjs/pdf.worker.min.js";
 }
 
 const DIAS = [
@@ -97,18 +96,33 @@ function salvarPlanosLocal() {
   );
 }
 
+function _validarTurmaSalva(t) {
+  return Boolean(t && typeof t === "object" && typeof t.id === "string" && typeof t.disciplina === "string" && Array.isArray(t.horarios));
+}
+
 function restaurarEstadoLocal() {
   try {
     const rawHist = localStorage.getItem("ufabc_web_historico_v1");
-    if (rawHist) historico = JSON.parse(rawHist);
+    if (rawHist) {
+      const parsed = JSON.parse(rawHist);
+      if (parsed && Array.isArray(parsed.disciplinas)) {
+        historico = parsed;
+      }
+    }
   } catch (_) {}
   try {
     const rawPlanos = localStorage.getItem("ufabc_web_planos_v1");
     if (rawPlanos) {
       const obj = JSON.parse(rawPlanos);
-      ["A", "B", "C"].forEach((k) => (obj[k] || []).forEach((t) => planos[k].set(t.id, t)));
-      if (obj.planoAtual && planos[obj.planoAtual]) planoAtual = obj.planoAtual;
-      atualizarAbasPlano();
+      if (obj && typeof obj === "object") {
+        ["A", "B", "C"].forEach((k) => {
+          if (Array.isArray(obj[k])) {
+            obj[k].filter(_validarTurmaSalva).forEach((t) => planos[k].set(t.id, t));
+          }
+        });
+        if (obj.planoAtual && planos[obj.planoAtual]) planoAtual = obj.planoAtual;
+        atualizarAbasPlano();
+      }
     }
   } catch (_) {}
 }
@@ -164,10 +178,10 @@ function popularCursos(listaCursos) {
 
   select.innerHTML =
     `<optgroup label="Cursos de Ingresso (Interdisciplinares)">` +
-    ingressos.map((c) => `<option value="${c}">${CURSOS_INGRESSO.get(c)}</option>`).join("") +
+    ingressos.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(CURSOS_INGRESSO.get(c))}</option>`).join("") +
     `</optgroup>` +
     `<optgroup label="Cursos de Formação Específica">` +
-    especificos.map((c) => `<option value="${c}">${formatarNomeCurso(c)}</option>`).join("") +
+    especificos.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(formatarNomeCurso(c))}</option>`).join("") +
     `</optgroup>`;
 
   if (listaCursos.includes(salvo)) {
@@ -396,7 +410,7 @@ function renderGradeSemanal() {
             const qClass = hr.semanalidade === "quinzenal_1" ? " q1" : hr.semanalidade === "quinzenal_2" ? " q2" : "";
             const tipo = hr.tipo === "pratica" ? "P" : "T";
             blocos.push(
-              `<div class="slot-block${qClass}" style="background:${corPorId.get(t.id)}" title="${t.disciplina} (${hr.inicio}-${hr.fim}${sem})">${t.disciplina.slice(0, 18)}${t.disciplina.length > 18 ? "…" : ""} [${tipo}${sem}]</div>`
+              `<div class="slot-block${qClass}" style="background:${corPorId.get(t.id)}" title="${escapeHtml(t.disciplina)} (${escapeHtml(hr.inicio)}-${escapeHtml(hr.fim)}${sem})">${escapeHtml(t.disciplina.slice(0, 18))}${t.disciplina.length > 18 ? "…" : ""} [${tipo}${sem}]</div>`
             );
           }
         }
@@ -409,7 +423,7 @@ function renderGradeSemanal() {
   table.innerHTML = html;
 
   if (!selArr.length) {
-    listaSel.innerHTML = `<div style="font-size:0.82rem;color:var(--muted);text-align:center;">Clique em "+ Adicionar" à esquerda ou em "✨ Sugerir grade" para montar o Plano ${planoAtual}.</div>`;
+    listaSel.innerHTML = `<div style="font-size:0.82rem;color:var(--muted);text-align:center;">Clique em "+ Adicionar" à esquerda ou em "✨ Sugerir grade" para montar o Plano ${escapeHtml(planoAtual)}.</div>`;
     return;
   }
 
@@ -419,10 +433,10 @@ function renderGradeSemanal() {
       <div class="selected-item">
         <div>
           <strong style="color:${corPorId.get(t.id)}">●</strong>
-          <strong>${t.disciplina}</strong> (${t.turma || t.turno})
-          <div style="font-size:0.75rem;color:var(--muted);font-family:monospace;">${t.id} • ${t.horarios_raw}</div>
+          <strong>${escapeHtml(t.disciplina)}</strong> (${escapeHtml(t.turma || t.turno)})
+          <div style="font-size:0.75rem;color:var(--muted);font-family:monospace;">${escapeHtml(t.id)} • ${escapeHtml(t.horarios_raw)}</div>
         </div>
-        <button class="btn-danger btn-sm" data-remove-id="${t.id}">Remover</button>
+        <button class="btn-danger btn-sm" data-remove-id="${escapeHtml(t.id)}">Remover</button>
       </div>`
     )
     .join("");
@@ -584,13 +598,13 @@ document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
         ${s.turmas
           .map(
             (t) =>
-              `<li><strong>${t.disciplina}</strong> (${t.turma || t.turno}) ${
+              `<li><strong>${escapeHtml(t.disciplina)}</strong> (${escapeHtml(t.turma || t.turno)}) ${
                 t.fixa
                   ? `<span class="badge rec-ok" style="font-size:0.68rem;">Mantida</span>`
                   : t.preenchimento_leve
-                  ? `<span class="badge cat-${t.categoria}" style="font-size:0.68rem;">Complemento leve</span>`
+                  ? `<span class="badge cat-${escapeHtml(t.categoria)}" style="font-size:0.68rem;">Complemento leve</span>`
                   : ""
-              } — ${t.creditos} créd. • ${t.horarios_raw}</li>`
+              } — ${t.creditos} créd. • ${escapeHtml(t.horarios_raw)}</li>`
           )
           .join("")}
       </ul>
@@ -614,6 +628,21 @@ const modalHist = document.getElementById("modalHistorico");
 document.getElementById("btnAbrirHistorico").addEventListener("click", () => modalHist.classList.add("open"));
 document.getElementById("btnFecharHistorico").addEventListener("click", () => modalHist.classList.remove("open"));
 
+function persistirHistoricoSePermitido() {
+  const chk = document.getElementById("chkSalvarHistoricoLocal");
+  if (chk && chk.checked && historico) {
+    localStorage.setItem("ufabc_web_historico_v1", JSON.stringify(historico));
+  } else {
+    localStorage.removeItem("ufabc_web_historico_v1");
+  }
+}
+
+document.getElementById("chkSalvarHistoricoLocal").addEventListener("change", () => {
+  persistirHistoricoSePermitido();
+  const salvo = document.getElementById("chkSalvarHistoricoLocal").checked;
+  toast(salvo ? "Histórico será salvo neste navegador." : "Modo privado: histórico ficará só na memória desta aba.");
+});
+
 document.getElementById("btnEnviarPdf").addEventListener("click", async () => {
   const fileInput = document.getElementById("inputPdfHistorico");
   if (!fileInput.files.length) return toast("Selecione um arquivo PDF primeiro.");
@@ -625,10 +654,13 @@ document.getElementById("btnEnviarPdf").addEventListener("click", async () => {
   statusEl.textContent = "Lendo PDF localmente no seu navegador...";
   try {
     historico = await sanitizarPdfHistoricoBrowser(file, nomesCatalogoMap());
-    localStorage.setItem("ufabc_web_historico_v1", JSON.stringify(historico));
+    persistirHistoricoSePermitido();
     const aprov = historico.disciplinas.filter((d) => d.status === "aprovado" || d.status === "equivalencia").length;
     const curso = historico.disciplinas.filter((d) => d.status === "em_curso").length;
-    statusEl.textContent = `✅ ${historico.total_disciplinas} disciplinas extraídas (${aprov} aprovadas/dispensadas, ${curso} em curso). Nenhum dado saiu do seu navegador.`;
+    const modoTxt = document.getElementById("chkSalvarHistoricoLocal").checked
+      ? "Salvo apenas no seu navegador (sem CPF/RG/RA/notas)."
+      : "Modo efêmero: apagado automaticamente ao fechar a aba.";
+    statusEl.textContent = `✅ ${historico.total_disciplinas} disciplinas extraídas (${aprov} aprovadas/dispensadas, ${curso} em curso). ${modoTxt}`;
     toast("Histórico importado com privacidade total!");
     atualizarTela();
   } catch (err) {
@@ -640,7 +672,7 @@ document.getElementById("btnEnviarTexto").addEventListener("click", () => {
   const txt = document.getElementById("inputTextoHistorico").value.trim();
   if (!txt) return toast("Cole o texto das disciplinas primeiro.");
   historico = sanitizarTextoHistorico(txt, nomesCatalogoMap());
-  localStorage.setItem("ufabc_web_historico_v1", JSON.stringify(historico));
+  persistirHistoricoSePermitido();
   const aprov = historico.disciplinas.filter((d) => d.status === "aprovado" || d.status === "equivalencia").length;
   const curso = historico.disciplinas.filter((d) => d.status === "em_curso").length;
   document.getElementById("historicoStatusModal").textContent =
@@ -701,14 +733,14 @@ const modalPend = document.getElementById("modalPendentes");
 document.getElementById("btnVerPendentes").addEventListener("click", () => {
   if (!ultimoProgresso) return;
   const renderGrupo = (titulo, lista) => {
-    if (!lista.length) return `<p style="margin-bottom:12px;"><strong>${titulo}:</strong> 🎉 Todas concluídas!</p>`;
+    if (!lista.length) return `<p style="margin-bottom:12px;"><strong>${escapeHtml(titulo)}:</strong> 🎉 Todas concluídas!</p>`;
     return `
-      <h4 style="margin:10px 0 6px;">${titulo} (${lista.length})</h4>
+      <h4 style="margin:10px 0 6px;">${escapeHtml(titulo)} (${lista.length})</h4>
       <ul style="padding-left:18px;margin-bottom:12px;">
         ${lista
           .map(
             (d) =>
-              `<li style="margin-bottom:4px;"><code>${d.codigo}</code> — ${d.nome} ${
+              `<li style="margin-bottom:4px;"><code>${escapeHtml(d.codigo)}</code> — ${escapeHtml(d.nome)} ${
                 d.ofertada_agora
                   ? '<span class="badge rec-ok">Ofertada agora</span>'
                   : '<span class="badge rec-desconhecido">Sem oferta</span>'

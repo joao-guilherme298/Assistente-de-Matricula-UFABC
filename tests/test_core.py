@@ -245,3 +245,20 @@ def test_api_endpoints_basicos():
             files={"arquivo": ("falso.pdf", b"NOT_A_PDF_CONTENT", "application/pdf")},
         )
         assert r_bad.status_code == 400
+
+
+def test_collector_allowlist_anti_ssrf():
+    import pytest
+    from src.collectors.prograd import _validar_url_ufabc
+
+    assert _validar_url_ufabc("https://prograd.ufabc.edu.br/pdf/oferta.pdf").startswith("https://")
+    assert _validar_url_ufabc("https://www.ufabc.edu.br/images/ppc.pdf").startswith("https://")
+
+    for url_ruim in [
+        "https://evil.com/oferta.pdf",
+        "https://ufabc.edu.br.evil.com/x.pdf",
+        "http://169.254.169.254/latest/meta-data/",
+        "file:///etc/passwd",
+    ]:
+        with pytest.raises(ValueError):
+            _validar_url_ufabc(url_ruim)
