@@ -214,6 +214,30 @@ def _extrair_codigos_pdf_simples(pdf_path: Path, codigos_validos: set[str]) -> l
     return encontrados
 
 
+def _normalizar_hifens_pdf(txt: str) -> str:
+    # Alguns PDFs (ex: Lic. Geografia) usam caracteres Unicode especiais como \ue088 no lugar do hífen
+    txt = txt.replace("\ue088", "-").replace("\u2013", "-").replace("\u2014", "-")
+    return re.sub(r"([A-Z]{2,5}\d{2,4})\s*\n\s*(\d{0,2}-\d{2})", r"\1\2", txt)
+
+
+def _extrair_codigos_paginas(
+    pdf_path: Path,
+    paginas_1based: list[int],
+    excluir: set[str],
+) -> list[str]:
+    reader = PdfReader(str(pdf_path))
+    saida: list[str] = []
+    vistos: set[str] = set()
+    for pno in paginas_1based:
+        if 1 <= pno <= len(reader.pages):
+            txt = _normalizar_hifens_pdf(reader.pages[pno - 1].extract_text() or "")
+            for c in CODIGO_RE.findall(txt):
+                if c not in excluir and c not in vistos:
+                    vistos.add(c)
+                    saida.append(c)
+    return saida
+
+
 def _extrair_obrigatorias_ppc(
     pdf_path: Path,
     codigos_base: set[str],
@@ -229,7 +253,7 @@ def _extrair_obrigatorias_ppc(
 
     for page in reader.pages:
         txt = page.extract_text() or ""
-        txt_junto = re.sub(r"([A-Z]{2,5}\d{2,4})\s*\n\s*(\d{0,2}-\d{2})", r"\1\2", txt)
+        txt_junto = _normalizar_hifens_pdf(txt)
         upper = txt_junto.upper()
 
         # Ignorar páginas de sumário, opções limitadas, transição/equivalência ou ementário
@@ -404,8 +428,28 @@ def main(offline: bool = False) -> None:
                 ol_cods = _extrair_codigos_pdf_simples(ol_pdf, codigos_validos) if ol_pdf.exists() else []
 
                 obrig_cods: list[str] = []
+                excluir_comum = set(ol_cods) | (set(bases.get(tipo_base, [])) if tipo_base != "nenhum" else set())
+
                 if nome_curso in eng_obrig_map and eng_obrig_map[nome_curso]:
                     obrig_cods = [c for c in eng_obrig_map[nome_curso] if c not in set(ol_cods)]
+                elif slug == "bm" and ppc_pdf.exists():
+                    # Matemática: tabela de obrigatórias nas páginas 28–30
+                    obrig_cods = _extrair_codigos_paginas(ppc_pdf, [28, 29, 30], excluir_comum)
+                elif slug == "bpt" and ppc_pdf.exists():
+                    # Planejamento Territorial: Quadro 4 (páginas 29–30)
+                    obrig_cods = _extrair_codigos_paginas(ppc_pdf, [29, 30], excluir_comum)
+                elif slug == "lfil" and ppc_pdf.exists():
+                    # Lic. Filosofia: obrigatórias nas páginas 32–34; opções limitadas nas páginas 35–40
+                    obrig_cods = _extrair_codigos_paginas(ppc_pdf, [32, 33, 34], excluir_comum)
+                    ol_extra = _extrair_codigos_paginas(ppc_pdf, [35, 36, 37, 38, 39, 40], set(obrig_cods) | excluir_comum)
+                    if ol_extra and not ol_cods:
+                        ol_cods = ol_extra
+                elif slug == "lg" and ppc_pdf.exists():
+                    # Lic. Geografia: seção 16.1 Disciplinas Obrigatórias (páginas 62–63)
+                    obrig_cods = _extrair_codigos_paginas(ppc_pdf, [62, 63], excluir_comum)
+                elif slug == "bce" and (CURSOS_PDF_DIR / "bce_218.pdf").exists():
+                    # Ciências Econômicas: seção 8.2.1 Disciplinas Obrigatórias (páginas 20–22)
+                    obrig_cods = _extrair_codigos_paginas(CURSOS_PDF_DIR / "bce_218.pdf", [20, 21, 22], excluir_comum)
                 elif ppc_pdf.exists():
                     codigos_base_set = set(bases.get(tipo_base, []))
                     obrig_cods = _extrair_obrigatorias_ppc(
