@@ -139,16 +139,27 @@ function labelCategoria(cat) {
   return CAT_LABELS[cat] || cat;
 }
 
+const CURSOS_INGRESSO = new Map([
+  ["BACHARELADO EM CIÊNCIA E TECNOLOGIA", "BC&T — Bacharelado em Ciência e Tecnologia"],
+  ["BACHARELADO EM CIÊNCIAS E HUMANIDADES", "BC&H — Bacharelado em Ciências e Humanidades"],
+  ["LICENCIATURA EM CIÊNCIAS NATURAIS E EXATAS", "LCNE — Licenciatura em Ciências Naturais e Exatas"],
+  ["LICENCIATURA EM CIÊNCIAS HUMANAS", "LCH — Licenciatura em Ciências Humanas"],
+]);
+
 function popularCursos(listaCursos) {
   if (!listaCursos || !listaCursos.length) return;
   const select = document.getElementById("fCurso");
   const salvo = localStorage.getItem("ufabc_curso_v1") || "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
-  select.innerHTML = listaCursos
-    .map((c) => {
-      const sufixo = c === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO" ? " (PPC 2023)" : "";
-      return `<option value="${c}">${formatarNomeCurso(c)}${sufixo}</option>`;
-    })
-    .join("");
+  const ingressos = [...CURSOS_INGRESSO.keys()].filter((c) => listaCursos.includes(c));
+  const especificos = listaCursos.filter((c) => !CURSOS_INGRESSO.has(c));
+
+  select.innerHTML =
+    `<optgroup label="Cursos de Ingresso (Interdisciplinares)">` +
+    ingressos.map((c) => `<option value="${c}">${CURSOS_INGRESSO.get(c)}</option>`).join("") +
+    `</optgroup>` +
+    `<optgroup label="Cursos de Formação Específica">` +
+    especificos.map((c) => `<option value="${c}">${formatarNomeCurso(c)}</option>`).join("") +
+    `</optgroup>`;
   if (listaCursos.includes(salvo)) select.value = salvo;
 }
 
