@@ -2,6 +2,11 @@ import { MotorMatriculaWeb, horaParaMin, horariosConflitam } from "./engine.js";
 import { exportarGradeICS, exportarGradePNG } from "./exportar.js";
 import { sanitizarPdfHistoricoBrowser, sanitizarTextoHistorico } from "./historico_parser.js";
 
+if (window.pdfjsLib) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+}
+
 const DIAS = [
   { key: "segunda", label: "Seg" },
   { key: "terca", label: "Ter" },
@@ -278,25 +283,25 @@ function renderListaTurmas() {
 
     const recsHtml = rep.recomendacoes.length
       ? `<div class="recs-box"><strong>Recomendações:</strong> ${rep.recomendacoes
-          .map((r) => `<span class="${r.cumprida ? "rec-item-ok" : "rec-item-miss"}">${r.cumprida ? "✓" : "•"} ${r.nome}</span>`)
+          .map((r) => `<span class="${r.cumprida ? "rec-item-ok" : "rec-item-miss"}">${r.cumprida ? "✓" : "•"} ${escapeHtml(r.nome)}</span>`)
           .join("")}</div>`
       : "";
 
     const unlockHtml =
       rep.destrava_count > 0
-        ? `<span class="badge badge-unlock" title="Destrava: ${rep.destrava.join(", ")}">🔓 Destrava ${rep.destrava_count}</span>`
+        ? `<span class="badge badge-unlock" title="Destrava: ${escapeHtml(rep.destrava.join(", "))}">🔓 Destrava ${rep.destrava_count}</span>`
         : "";
 
     card.innerHTML = `
       <div class="turma-top">
         <div>
-          <div class="turma-title turma-title-link" title="Clique para ver objetivos e ementa">${rep.disciplina} <span style="font-size:0.74rem;color:var(--muted);font-weight:500;">📖</span></div>
-          <div class="turma-code">${rep.codigo || "—"} • TPEI ${rep.tpi || "—"} (${rep.creditos} créd.) • ${turmas.length} turma${turmas.length === 1 ? "" : "s"}</div>
+          <div class="turma-title turma-title-link" title="Clique para ver objetivos e ementa">${escapeHtml(rep.disciplina)} <span style="font-size:0.74rem;color:var(--muted);font-weight:500;">📖</span></div>
+          <div class="turma-code">${escapeHtml(rep.codigo || "—")} • TPEI ${escapeHtml(rep.tpi || "—")} (${rep.creditos} créd.) • ${turmas.length} turma${turmas.length === 1 ? "" : "s"}</div>
         </div>
       </div>
       <div class="badges">
-        <span class="badge cat-${rep.categoria}">${labelCategoria(rep.categoria)}</span>
-        <span class="badge rec-${rep.status_recomendacao}">${REC_LABELS[rep.status_recomendacao] || rep.status_recomendacao}</span>
+        <span class="badge cat-${escapeHtml(rep.categoria)}">${escapeHtml(labelCategoria(rep.categoria))}</span>
+        <span class="badge rec-${escapeHtml(rep.status_recomendacao)}">${escapeHtml(REC_LABELS[rep.status_recomendacao] || rep.status_recomendacao)}</span>
         ${unlockHtml}
         ${rep.status_historico === "em_curso" ? `<span class="badge" style="background:rgba(59,130,246,0.2);color:#93c5fd;">Em curso</span>` : ""}
       </div>
@@ -321,10 +326,10 @@ function renderListaTurmas() {
 
       row.innerHTML = `
         <div class="turma-row-info">
-          <div class="turma-row-main">${t.turma || t.turno} • ${t.campus} • ${t.vagas ?? "?"} vagas <span style="font-family:monospace;font-weight:400;color:var(--muted);">(${t.id})</span></div>
-          <div class="turma-row-sub">🕒 ${t.horarios_raw || "Horário não informado"}</div>
-          <div class="turma-row-sub">👩‍🏫 ${docentes}</div>
-          ${conflitos.length ? `<div class="turma-row-sub" style="color:#fca5a5;">⚠️ Conflita com: ${conflitos.join(", ")}</div>` : ""}
+          <div class="turma-row-main">${escapeHtml(t.turma || t.turno)} • ${escapeHtml(t.campus)} • ${escapeHtml(t.vagas ?? "?")} vagas <span style="font-family:monospace;font-weight:400;color:var(--muted);">(${escapeHtml(t.id)})</span></div>
+          <div class="turma-row-sub">🕒 ${escapeHtml(t.horarios_raw || "Horário não informado")}</div>
+          <div class="turma-row-sub">👩‍🏫 ${escapeHtml(docentes)}</div>
+          ${conflitos.length ? `<div class="turma-row-sub" style="color:#fca5a5;">⚠️ Conflita com: ${escapeHtml(conflitos.join(", "))}</div>` : ""}
         </div>
         <button class="${btnClass}" ${!isSel && conflitos.length ? "disabled" : ""}>${btnLabel}</button>
       `;
@@ -612,10 +617,14 @@ document.getElementById("btnFecharHistorico").addEventListener("click", () => mo
 document.getElementById("btnEnviarPdf").addEventListener("click", async () => {
   const fileInput = document.getElementById("inputPdfHistorico");
   if (!fileInput.files.length) return toast("Selecione um arquivo PDF primeiro.");
+  const file = fileInput.files[0];
+  if (file.size > 15 * 1024 * 1024) {
+    return toast("Arquivo muito grande (máx. 15 MB).");
+  }
   const statusEl = document.getElementById("historicoStatusModal");
   statusEl.textContent = "Lendo PDF localmente no seu navegador...";
   try {
-    historico = await sanitizarPdfHistoricoBrowser(fileInput.files[0], nomesCatalogoMap());
+    historico = await sanitizarPdfHistoricoBrowser(file, nomesCatalogoMap());
     localStorage.setItem("ufabc_web_historico_v1", JSON.stringify(historico));
     const aprov = historico.disciplinas.filter((d) => d.status === "aprovado" || d.status === "equivalencia").length;
     const curso = historico.disciplinas.filter((d) => d.status === "em_curso").length;

@@ -238,3 +238,10 @@ def test_api_endpoints_basicos():
         sugs_fix = r_fix.json()["sugestoes"]
         assert len(sugs_fix) >= 1
         assert any(t["id"] == fixa_id for t in sugs_fix[0]["turmas"])
+
+        # Testar validação de magic bytes no upload de PDF
+        r_bad = client.post(
+            "/api/historico/upload",
+            files={"arquivo": ("falso.pdf", b"NOT_A_PDF_CONTENT", "application/pdf")},
+        )
+        assert r_bad.status_code == 400

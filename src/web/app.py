@@ -255,12 +255,19 @@ def verificar_conflito(req: ConflitoRequest) -> dict:
     return {"conflita": len(conflitos) > 0, "conflitos": conflitos}
 
 
+MAX_HISTORICO_PDF_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
 @app.post("/api/historico/upload")
 async def upload_historico_pdf(arquivo: UploadFile = File(...)) -> dict:
     """Processa o PDF do histórico 100% em memória, descarta PII e salva só o JSON anônimo."""
     if not arquivo.filename or not arquivo.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Envie um arquivo PDF válido.")
-    conteudo = await arquivo.read()
+    conteudo = await arquivo.read(MAX_HISTORICO_PDF_BYTES + 1)
+    if len(conteudo) > MAX_HISTORICO_PDF_BYTES:
+        raise HTTPException(status_code=413, detail="Arquivo PDF excede o limite de 10 MB.")
+    if not conteudo.startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="Conteúdo inválido: o arquivo não é um PDF válido.")
     sanitizado = sanitizar_pdf_historico_bytes(conteudo, estado.catalogo_nomes())
     # Descarta imediatamente o conteúdo bruto do PDF da memória
     del conteudo
@@ -326,4 +333,5 @@ def sincronizar_prograd(forcar: bool = False) -> dict:
         estado.carregar(forcar_reparse=True)
         return {"ok": True, "arquivos": arquivos}
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        print(f"[ERRO] Falha ao sincronizar PROGRAD: {exc}")
+        raise HTTPException(status_code=500, detail="Falha ao sincronizar documentos da PROGRAD.")
