@@ -1,4 +1,4 @@
-// Motor de cruzamento, grafo de destravamento e sugestão de grades — 100% client-side
+// Motor de cruzamento, grafo de destravamento e sugestão de grades — 100% client-side (Multi-curso UFABC)
 
 export function normalizarTexto(texto) {
   if (!texto) return "";
@@ -41,8 +41,15 @@ export function turmasConflitam(t1, t2) {
   return false;
 }
 
+const BASE_NOMES = {
+  bct: "BC&T",
+  bch: "BC&H",
+  lcne: "LCNE",
+  lch: "LCH",
+};
+
 export class MotorMatriculaWeb {
-  constructor(turmas, catalogo, grade) {
+  constructor(turmas, catalogo, gradeBcc, gradesCursos = null) {
     this.turmas = turmas.map((t) => ({
       ...t,
       disciplina_norm: t.disciplina_norm || normalizarTexto(t.disciplina),
@@ -51,10 +58,11 @@ export class MotorMatriculaWeb {
       ...c,
       nome_norm: normalizarTexto(c.nome),
     }));
-    this.grade = grade.map((g) => ({
+    this.gradeBcc = (gradeBcc || []).map((g) => ({
       ...g,
       nome_norm: normalizarTexto(g.nome),
     }));
+    this.gradesCursos = gradesCursos || { bases: {}, cursos: {} };
 
     this.catPorCod = new Map();
     this.catPorBase = new Map();
@@ -67,19 +75,8 @@ export class MotorMatriculaWeb {
       if (c.nome_norm) this.catPorNome.set(c.nome_norm, c);
     }
 
-    this.gradePorCod = new Map();
-    this.gradePorBase = new Map();
-    this.gradePorNome = new Map();
-    for (const g of this.grade) {
-      if (g.codigo) {
-        this.gradePorCod.set(g.codigo, g);
-        this.gradePorBase.set(baseCodigo(g.codigo), g);
-      }
-      if (g.nome_norm) this.gradePorNome.set(g.nome_norm, g);
-    }
-
-    this.destravaMapa = new Map();
-    this._construirGrafoDestravamento();
+    // Cache de índices por curso selecionado
+    this._cacheCurso = new Map();
   }
 
   buscarCatalogo(codigo, nomeNorm) {
@@ -90,36 +87,135 @@ export class MotorMatriculaWeb {
     return null;
   }
 
-  buscarGrade(codigo, nomeNorm) {
-    if (codigo && this.gradePorCod.has(codigo)) return this.gradePorCod.get(codigo);
-    if (nomeNorm && this.gradePorNome.has(nomeNorm)) return this.gradePorNome.get(nomeNorm);
-    const base = baseCodigo(codigo);
-    if (base && this.gradePorBase.has(base)) return this.gradePorBase.get(base);
-    return null;
+  listarCursosDisponiveis() {
+    const cursos = new Set([
+      "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
+      "BACHARELADO EM CIÊNCIA E TECNOLOGIA",
+      ...Object.keys(this.gradesCursos.cursos || {}),
+    ]);
+    for (const t of this.turmas) {
+      for (const c of t.cursos_oferta || []) {
+        if (c && c.toUpperCase() !== "ENGENHARIAS") cursos.add(c);
+      }
+    }
+    return [...cursos].sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
-  _construirGrafoDestravamento() {
-    for (const g of this.grade) {
-      if (!["obrigatoria_bcc", "obrigatoria_bct", "opcao_limitada"].includes(g.categoria)) continue;
+  _resolverNomeCodigo(cod) {
+    const cat = this.buscarCatalogo(cod, "");
+    if (cat) return cat.nome;
+    const t = this.turmas.find((x) => x.codigo === cod || baseCodigo(x.codigo) === baseCodigo(cod));
+    return t ? t.disciplina : cod;
+  }
+
+  obterConfigCurso(cursoNome) {
+    const chave = (cursoNome || "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO").trim().toUpperCase();
+    if (this._cacheCurso.has(chave)) return this._cacheCurso.get(chave);
+
+    const info = (this.gradesCursos.cursos || {})[chave] || null;
+    const tipoBase = info ? info.tipo_base : "nenhum";
+    const sigla = info ? info.sigla : chave;
+    const baseCodigos = tipoBase !== "nenhum" ? (this.gradesCursos.bases || {})[tipoBase] || [] : [];
+    const obrigCodigos = info ? info.obrigatorias || [] : [];
+    const olCodigos = info ? info.opcoes_limitadas || [] : [];
+
+    // Construir conjuntos rápidos (código exato + código-base + nome normalizado)
+    const montarIndice = (listaCod) => {
+      const cods = new Set();
+      const bases = new Set();
+      const nomes = new Set();
+      const itens = [];
+      for (const cod of listaCod) {
+        const nome = this._resolverNomeCodigo(cod);
+        const nomeNorm = normalizarTexto(nome);
+        cods.add(cod);
+        bases.add(baseCodigo(cod));
+        if (nomeNorm) nomes.add(nomeNorm);
+        itens.push({ codigo: cod, nome, nome_norm: nomeNorm });
+      }
+      return { cods, bases, nomes, itens };
+    };
+
+    const idxObrig = montarIndice(obrigCodigos);
+    const idxBase = montarIndice(baseCodigos);
+    const idxOl = montarIndice(olCodigos);
+
+    // Grafo de destravamento específico para este curso
+    const destravaMapa = new Map();
+    const todasDaGrade = [
+      ...idxObrig.itens.map((x) => ({ ...x, categoria: "obrigatoria_bcc" })),
+      ...idxBase.itens.map((x) => ({ ...x, categoria: "obrigatoria_bct" })),
+      ...idxOl.itens.map((x) => ({ ...x, categoria: "opcao_limitada" })),
+    ];
+
+    for (const g of todasDaGrade) {
       const cat = this.buscarCatalogo(g.codigo, g.nome_norm);
       if (!cat || !cat.recomendacoes || !cat.recomendacoes.length) continue;
       for (const rec of cat.recomendacoes) {
         const recNorm = normalizarTexto(rec);
-        const chaves = new Set([recNorm]);
-        if (recNorm.endsWith(" i")) chaves.add(recNorm.slice(0, -2).trim());
+        const chavesRec = new Set([recNorm]);
+        if (recNorm.endsWith(" i")) chavesRec.add(recNorm.slice(0, -2).trim());
         const catRec = this.catPorNome.get(recNorm);
         if (catRec && catRec.codigo) {
-          chaves.add(catRec.codigo);
-          chaves.add(baseCodigo(catRec.codigo));
+          chavesRec.add(catRec.codigo);
+          chavesRec.add(baseCodigo(catRec.codigo));
         }
         const alvo = { codigo: g.codigo, nome: g.nome, categoria: g.categoria };
-        for (const ch of chaves) {
-          if (!this.destravaMapa.has(ch)) this.destravaMapa.set(ch, []);
-          const lista = this.destravaMapa.get(ch);
+        for (const ch of chavesRec) {
+          if (!destravaMapa.has(ch)) destravaMapa.set(ch, []);
+          const lista = destravaMapa.get(ch);
           if (!lista.some((x) => x.nome === alvo.nome)) lista.push(alvo);
         }
       }
     }
+
+    const cfg = {
+      curso: chave,
+      sigla,
+      tipoBase,
+      labelBase: BASE_NOMES[tipoBase] || "",
+      ehIngresso: tipoBase === "nenhum",
+      temPpcObrig: obrigCodigos.length > 0,
+      temBase: baseCodigos.length > 0,
+      temOl: olCodigos.length > 0,
+      idxObrig,
+      idxBase,
+      idxOl,
+      destravaMapa,
+    };
+    this._cacheCurso.set(chave, cfg);
+    return cfg;
+  }
+
+  _pertenceAoIndice(codigo, nomeNorm, idx) {
+    if (codigo && idx.cods.has(codigo)) return true;
+    if (nomeNorm && idx.nomes.has(nomeNorm)) return true;
+    const base = baseCodigo(codigo);
+    if (base && idx.bases.has(base)) return true;
+    return false;
+  }
+
+  _categoriaParaCurso(turma, cfg) {
+    // Se for curso de ingresso (ex: BC&T, BC&H, LCNE, LCH), suas obrigatórias vão em obrigatoria_bct
+    if (cfg.ehIngresso) {
+      if (this._pertenceAoIndice(turma.codigo, turma.disciplina_norm, cfg.idxObrig)) return "obrigatoria_bct";
+      if (this._pertenceAoIndice(turma.codigo, turma.disciplina_norm, cfg.idxOl)) return "opcao_limitada";
+      const cursosT = new Set((turma.cursos_oferta || []).map((c) => c.toUpperCase()));
+      if (!cfg.temPpcObrig && cursosT.has(cfg.curso)) return "obrigatoria_bct";
+      return "livre";
+    }
+
+    // Curso específico (ex: BCC, Eng. Informação, BCD, Economia...)
+    if (this._pertenceAoIndice(turma.codigo, turma.disciplina_norm, cfg.idxObrig)) return "obrigatoria_bcc";
+    if (this._pertenceAoIndice(turma.codigo, turma.disciplina_norm, cfg.idxBase)) return "obrigatoria_bct";
+    if (this._pertenceAoIndice(turma.codigo, turma.disciplina_norm, cfg.idxOl)) return "opcao_limitada";
+
+    // Fallback pela oferta PROGRAD se o PPC desse curso não tinha códigos (ex: Economia)
+    if (!cfg.temPpcObrig) {
+      const cursosT = new Set((turma.cursos_oferta || []).map((c) => c.toUpperCase()));
+      if (cursosT.has(cfg.curso)) return "obrigatoria_bcc";
+    }
+    return "livre";
   }
 
   _indicesHistorico(historico, contarEmCurso = true) {
@@ -163,15 +259,15 @@ export class MotorMatriculaWeb {
     return false;
   }
 
-  _disciplinasDestravadas(codigo, nomeNorm, idx) {
+  _disciplinasDestravadas(codigo, nomeNorm, idxHist, cfg) {
     const candidatos = [];
     const vistos = new Set();
     for (const ch of [codigo, baseCodigo(codigo), nomeNorm]) {
-      if (!ch || !this.destravaMapa.has(ch)) continue;
-      for (const item of this.destravaMapa.get(ch)) {
+      if (!ch || !cfg.destravaMapa.has(ch)) continue;
+      for (const item of cfg.destravaMapa.get(ch)) {
         if (vistos.has(item.nome)) continue;
         vistos.add(item.nome);
-        if (!this._disciplinaCumprida(item.codigo, normalizarTexto(item.nome), idx)) {
+        if (!this._disciplinaCumprida(item.codigo, normalizarTexto(item.nome), idxHist)) {
           candidatos.push(item);
         }
       }
@@ -181,7 +277,7 @@ export class MotorMatriculaWeb {
     return candidatos;
   }
 
-  _avaliarRecomendacoes(recomendacoes, idx, temHistorico) {
+  _avaliarRecomendacoes(recomendacoes, idxHist, temHistorico) {
     if (!recomendacoes || !recomendacoes.length) return { status: "sem_recomendacao", detalhes: [] };
 
     const detalhes = [];
@@ -192,11 +288,11 @@ export class MotorMatriculaWeb {
       let ok = false;
       if (temHistorico) {
         const recSemI = recNorm.endsWith(" i") ? recNorm.slice(0, -2).trim() : "";
-        if (idx.nomesFeitos.has(recNorm) || (recSemI && idx.nomesFeitos.has(recSemI))) {
+        if (idxHist.nomesFeitos.has(recNorm) || (recSemI && idxHist.nomesFeitos.has(recSemI))) {
           ok = true;
         } else if (
           catRec &&
-          (idx.codigosFeitos.has(catRec.codigo) || idx.basesFeitas.has(baseCodigo(catRec.codigo)))
+          (idxHist.codigosFeitos.has(catRec.codigo) || idxHist.basesFeitas.has(baseCodigo(catRec.codigo)))
         ) {
           ok = true;
         }
@@ -211,61 +307,6 @@ export class MotorMatriculaWeb {
     return { status: "pendente", detalhes };
   }
 
-  listarCursosDisponiveis() {
-    const cursos = new Set([
-      "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO",
-      "BACHARELADO EM CIÊNCIA E TECNOLOGIA",
-    ]);
-    for (const t of this.turmas) {
-      for (const c of t.cursos_oferta || []) {
-        if (c && c.toUpperCase() !== "ENGENHARIAS") cursos.add(c);
-      }
-    }
-    return [...cursos].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }
-
-  _categoriaParaCurso(turma, curso) {
-    const cursoUp = (curso || "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO").trim().toUpperCase();
-    const gradeInfo = this.buscarGrade(turma.codigo, turma.disciplina_norm);
-
-    if (cursoUp === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO") {
-      return gradeInfo ? gradeInfo.categoria : "livre";
-    }
-
-    const cursosT = new Set((turma.cursos_oferta || []).map((c) => c.toUpperCase()));
-
-    if (cursoUp === "BACHARELADO EM CIÊNCIA E TECNOLOGIA") {
-      if (gradeInfo && gradeInfo.categoria === "obrigatoria_bct") return "obrigatoria_bct";
-      if (cursosT.has(cursoUp)) return "opcao_limitada";
-      return "livre";
-    }
-
-    const ehEngenharia = cursoUp.includes("ENGENHARIA");
-    const ehBch = [
-      "HUMANIDADES",
-      "ECONÔMICAS",
-      "ECONOMICAS",
-      "FILOSOFIA",
-      "POLÍTICAS",
-      "POLITICAS",
-      "RELAÇÕES",
-      "RELACOES",
-      "PLANEJAMENTO",
-      "HISTÓRIA",
-      "HISTORIA",
-      "GEOGRAFIA",
-      "HUMANAS",
-    ].some((k) => cursoUp.includes(k));
-
-    if (cursosT.has(cursoUp) || (ehEngenharia && cursosT.has("ENGENHARIAS"))) {
-      return "obrigatoria_bcc";
-    }
-    if (!ehBch && gradeInfo && gradeInfo.categoria === "obrigatoria_bct") {
-      return "obrigatoria_bct";
-    }
-    return "livre";
-  }
-
   analisarOferta({
     historico = null,
     contarEmCurso = true,
@@ -278,7 +319,8 @@ export class MotorMatriculaWeb {
     diasPermitidos = null,
     busca = "",
   } = {}) {
-    const idx = this._indicesHistorico(historico, contarEmCurso);
+    const cfg = this.obterConfigCurso(curso);
+    const idxHist = this._indicesHistorico(historico, contarEmCurso);
     const temHistorico = Boolean(historico && historico.disciplinas && historico.disciplinas.length > 0);
     const buscaNorm = normalizarTexto(busca);
     const diasSet = diasPermitidos ? new Set(diasPermitidos) : null;
@@ -294,21 +336,21 @@ export class MotorMatriculaWeb {
         if (t.horarios.some((h) => !diasSet.has(h.dia))) continue;
       }
 
-      const catTurma = this._categoriaParaCurso(t, curso);
+      const catTurma = this._categoriaParaCurso(t, cfg);
       if (categoria && categoria !== "Todas" && catTurma !== categoria) continue;
 
-      const jaCursada = this._disciplinaCumprida(t.codigo, t.disciplina_norm, idx);
+      const jaCursada = this._disciplinaCumprida(t.codigo, t.disciplina_norm, idxHist);
       if (ocultarCursadas && jaCursada) continue;
 
       const statusHist =
-        idx.statusMap.get(t.codigo) ||
-        idx.statusMap.get(t.disciplina_norm) ||
-        idx.statusMap.get(baseCodigo(t.codigo)) ||
+        idxHist.statusMap.get(t.codigo) ||
+        idxHist.statusMap.get(t.disciplina_norm) ||
+        idxHist.statusMap.get(baseCodigo(t.codigo)) ||
         "nao_cursada";
 
       const catInfo = this.buscarCatalogo(t.codigo, t.disciplina_norm);
       const recs = catInfo ? catInfo.recomendacoes : [];
-      const { status: statusRec, detalhes: recsDetalhe } = this._avaliarRecomendacoes(recs, idx, temHistorico);
+      const { status: statusRec, detalhes: recsDetalhe } = this._avaliarRecomendacoes(recs, idxHist, temHistorico);
 
       if (apenasRecomendacoesOk && statusRec !== "sem_recomendacao" && statusRec !== "ok") continue;
 
@@ -317,7 +359,7 @@ export class MotorMatriculaWeb {
         if (!alvo.includes(buscaNorm)) continue;
       }
 
-      const destrava = this._disciplinasDestravadas(t.codigo, t.disciplina_norm, idx);
+      const destrava = this._disciplinasDestravadas(t.codigo, t.disciplina_norm, idxHist, cfg);
 
       resultados.push({
         ...t,
@@ -345,36 +387,47 @@ export class MotorMatriculaWeb {
     return resultados;
   }
 
-  resumoProgresso(historico = null, contarEmCurso = true) {
-    const idx = this._indicesHistorico(historico, contarEmCurso);
+  resumoProgresso(historico = null, contarEmCurso = true, curso = "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO") {
+    const cfg = this.obterConfigCurso(curso);
+    const idxHist = this._indicesHistorico(historico, contarEmCurso);
     const ofertadasCod = new Set(this.turmas.map((t) => t.codigo).filter(Boolean));
+    const ofertadasBase = new Set(this.turmas.map((t) => baseCodigo(t.codigo)).filter(Boolean));
     const ofertadasNome = new Set(this.turmas.map((t) => t.disciplina_norm));
 
-    const resumo = {
-      tem_historico: Boolean(historico && historico.disciplinas && historico.disciplinas.length > 0),
-      total_historico: historico && historico.disciplinas ? historico.disciplinas.length : 0,
-      obrigatorias_bcc: { feitas: 0, total: 0, pendentes: [] },
-      obrigatorias_bct: { feitas: 0, total: 0, pendentes: [] },
-      opcoes_limitadas: { feitas: 0, total_rol: 0 },
+    const estaOfertada = (g) =>
+      ofertadasCod.has(g.codigo) || ofertadasBase.has(baseCodigo(g.codigo)) || ofertadasNome.has(g.nome_norm);
+
+    const contarLista = (itens) => {
+      let feitas = 0;
+      const pendentes = [];
+      for (const g of itens) {
+        if (this._disciplinaCumprida(g.codigo, g.nome_norm, idxHist)) {
+          feitas++;
+        } else {
+          pendentes.push({ codigo: g.codigo, nome: g.nome, ofertada_agora: estaOfertada(g) });
+        }
+      }
+      return { feitas, total: itens.length, pendentes };
     };
 
-    for (const g of this.grade) {
-      const feita = this._disciplinaCumprida(g.codigo, g.nome_norm, idx);
-      const ofertada = ofertadasCod.has(g.codigo) || ofertadasNome.has(g.nome_norm);
-      if (g.categoria === "obrigatoria_bcc") {
-        resumo.obrigatorias_bcc.total++;
-        if (feita) resumo.obrigatorias_bcc.feitas++;
-        else resumo.obrigatorias_bcc.pendentes.push({ codigo: g.codigo, nome: g.nome, ofertada_agora: ofertada });
-      } else if (g.categoria === "obrigatoria_bct") {
-        resumo.obrigatorias_bct.total++;
-        if (feita) resumo.obrigatorias_bct.feitas++;
-        else resumo.obrigatorias_bct.pendentes.push({ codigo: g.codigo, nome: g.nome, ofertada_agora: ofertada });
-      } else if (g.categoria === "opcao_limitada") {
-        resumo.opcoes_limitadas.total_rol++;
-        if (feita) resumo.opcoes_limitadas.feitas++;
-      }
+    const obrigCurso = cfg.ehIngresso ? { feitas: 0, total: 0, pendentes: [] } : contarLista(cfg.idxObrig.itens);
+    const obrigBase = cfg.ehIngresso ? contarLista(cfg.idxObrig.itens) : contarLista(cfg.idxBase.itens);
+
+    let olFeitas = 0;
+    for (const g of cfg.idxOl.itens) {
+      if (this._disciplinaCumprida(g.codigo, g.nome_norm, idxHist)) olFeitas++;
     }
-    return resumo;
+
+    return {
+      curso_sigla: cfg.sigla,
+      eh_ingresso: cfg.ehIngresso,
+      label_base: cfg.ehIngresso ? cfg.sigla : cfg.labelBase,
+      tem_historico: Boolean(historico && historico.disciplinas && historico.disciplinas.length > 0),
+      total_historico: historico && historico.disciplinas ? historico.disciplinas.length : 0,
+      obrigatorias_curso: obrigCurso,
+      obrigatorias_base: obrigBase,
+      opcoes_limitadas: { feitas: olFeitas, total_rol: cfg.idxOl.itens.length },
+    };
   }
 
   sugerirGrades({
@@ -519,7 +572,7 @@ export class MotorMatriculaWeb {
         opcao: idxS + 1,
         total_creditos: lista.reduce((acc, t) => acc + t.creditos, 0),
         total_disciplinas: lista.length,
-        obrigatorias_bcc: lista.filter((t) => t.categoria === "obrigatoria_bcc").length,
+        obrigatorias_curso: lista.filter((t) => t.categoria === "obrigatoria_bcc" || t.categoria === "obrigatoria_bct").length,
         turmas: lista,
       };
     });

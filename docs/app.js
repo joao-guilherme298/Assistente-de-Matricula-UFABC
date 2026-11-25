@@ -128,9 +128,9 @@ function cursoAtual() {
 }
 
 function labelCategoria(cat) {
-  if (cat === "obrigatoria_bcc") {
-    return cursoAtual() === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO" ? "Obrigatória BCC" : "Do Curso";
-  }
+  if (!ultimoProgresso) return CAT_LABELS[cat] || cat;
+  if (cat === "obrigatoria_bcc") return `Obrigatória ${ultimoProgresso.curso_sigla}`;
+  if (cat === "obrigatoria_bct") return `Obrigatória ${ultimoProgresso.label_base || "Base"}`;
   return CAT_LABELS[cat] || cat;
 }
 
@@ -138,10 +138,7 @@ function popularCursos(listaCursos) {
   const select = document.getElementById("fCurso");
   const salvo = localStorage.getItem("ufabc_web_curso_v1") || "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
   select.innerHTML = listaCursos
-    .map((c) => {
-      const sufixo = c === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO" ? " (PPC 2023)" : "";
-      return `<option value="${c}">${formatarNomeCurso(c)}${sufixo}</option>`;
-    })
+    .map((c) => `<option value="${c}">${formatarNomeCurso(c)}</option>`)
     .join("");
   if (listaCursos.includes(salvo)) {
     select.value = salvo;
@@ -166,7 +163,7 @@ function atualizarTela() {
     diasPermitidos: [...diasAtivos],
     busca: document.getElementById("fBusca").value.trim(),
   });
-  ultimoProgresso = motor.resumoProgresso(historico, contarEmCurso);
+  ultimoProgresso = motor.resumoProgresso(historico, contarEmCurso, curso);
 
   atualizarMetaUI();
   renderProgresso();
@@ -174,48 +171,42 @@ function atualizarTela() {
   renderGradeSemanal();
 }
 
-function ehCursoBch(curso) {
-  const up = (curso || "").toUpperCase();
-  return [
-    "HUMANIDADES",
-    "ECONÔMICAS",
-    "ECONOMICAS",
-    "FILOSOFIA",
-    "POLÍTICAS",
-    "POLITICAS",
-    "RELAÇÕES",
-    "RELACOES",
-    "PLANEJAMENTO",
-    "HISTÓRIA",
-    "HISTORIA",
-    "GEOGRAFIA",
-    "HUMANAS",
-  ].some((k) => up.includes(k));
-}
-
 function renderProgresso() {
   if (!ultimoProgresso) return;
   const p = ultimoProgresso;
-  const curso = cursoAtual();
-  const isBcc = curso === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
-  const isBch = ehCursoBch(curso);
+  const temCursoObrig = p.obrigatorias_curso.total > 0;
+  const temBaseObrig = p.obrigatorias_base.total > 0;
+  const temOl = p.opcoes_limitadas.total_rol > 0;
 
-  document.getElementById("cardStatBcc").style.display = isBcc ? "" : "none";
-  document.getElementById("cardStatOl").style.display = isBcc ? "" : "none";
-  document.getElementById("cardStatBct").style.display = isBch ? "none" : "";
-  document.getElementById("btnVerPendentes").style.display = isBch ? "none" : "";
+  document.getElementById("cardStatBcc").style.display = temCursoObrig ? "" : "none";
+  document.getElementById("cardStatBct").style.display = temBaseObrig ? "" : "none";
+  document.getElementById("cardStatOl").style.display = temOl ? "" : "none";
+  document.getElementById("btnVerPendentes").style.display = temCursoObrig || temBaseObrig ? "" : "none";
 
-  document.getElementById("statBcc").textContent = `${p.obrigatorias_bcc.feitas} / ${p.obrigatorias_bcc.total}`;
+  document.getElementById("labelStatCurso").textContent = `Obrigatórias — ${p.curso_sigla}`;
+  document.getElementById("statBcc").textContent = `${p.obrigatorias_curso.feitas} / ${p.obrigatorias_curso.total}`;
   document.getElementById("statBccSub").textContent = p.tem_historico
-    ? `${p.obrigatorias_bcc.pendentes.length} pendentes (${p.obrigatorias_bcc.pendentes.filter((x) => x.ofertada_agora).length} ofertadas agora)`
+    ? `${p.obrigatorias_curso.pendentes.length} pendentes (${p.obrigatorias_curso.pendentes.filter((x) => x.ofertada_agora).length} ofertadas agora)`
     : "Importe seu histórico para calcular";
 
-  document.getElementById("statBct").textContent = `${p.obrigatorias_bct.feitas} / ${p.obrigatorias_bct.total}`;
+  document.getElementById("labelStatBase").textContent = `Obrigatórias — ${p.label_base || "Base"}`;
+  document.getElementById("statBct").textContent = `${p.obrigatorias_base.feitas} / ${p.obrigatorias_base.total}`;
   document.getElementById("statBctSub").textContent = p.tem_historico
-    ? `${p.obrigatorias_bct.pendentes.length} pendentes`
+    ? `${p.obrigatorias_base.pendentes.length} pendentes (${p.obrigatorias_base.pendentes.filter((x) => x.ofertada_agora).length} ofertadas agora)`
+    : p.eh_ingresso
+    ? "Curso de ingresso"
     : "Ciclo básico";
 
+  document.getElementById("labelStatOl").textContent = `Opções Limitadas — ${p.curso_sigla}`;
   document.getElementById("statOl").textContent = `${p.opcoes_limitadas.feitas}`;
+  document.getElementById("statOlSub").textContent = `de ${p.opcoes_limitadas.total_rol} no rol do curso`;
+
+  // Atualizar labels do filtro de categoria dinamicamente
+  const selCat = document.getElementById("fCategoria");
+  if (selCat && selCat.options.length >= 4) {
+    selCat.options[1].text = p.eh_ingresso ? "Do Curso" : `Obrigatórias ${p.curso_sigla}`;
+    selCat.options[2].text = `Obrigatórias ${p.label_base || "Base"}`;
+  }
 }
 
 function agruparPorDisciplina(lista) {
@@ -529,7 +520,7 @@ document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
         <div>
           <strong>Opção ${s.opcao}</strong>
           <span style="font-size:0.78rem;color:var(--muted);margin-left:6px;">
-            ${s.total_disciplinas} matérias • ${s.total_creditos} créditos • ${s.obrigatorias_bcc} obrig. BCC
+            ${s.total_disciplinas} matérias • ${s.total_creditos} créditos • ${s.obrigatorias_curso} obrig.
           </span>
         </div>
         <button class="btn-primary btn-sm">Aplicar no Plano ${planoAtual}</button>
@@ -653,10 +644,15 @@ document.getElementById("btnVerPendentes").addEventListener("click", () => {
           .join("")}
       </ul>`;
   };
-  const isBcc = cursoAtual() === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO";
-  document.getElementById("conteudoPendentes").innerHTML =
-    (isBcc ? renderGrupo("Obrigatórias do BCC", ultimoProgresso.obrigatorias_bcc.pendentes) : "") +
-    renderGrupo("Obrigatórias do BC&T", ultimoProgresso.obrigatorias_bct.pendentes);
+  const p = ultimoProgresso;
+  let html = "";
+  if (p.obrigatorias_curso.total > 0) {
+    html += renderGrupo(`Obrigatórias — ${p.curso_sigla}`, p.obrigatorias_curso.pendentes);
+  }
+  if (p.obrigatorias_base.total > 0) {
+    html += renderGrupo(`Obrigatórias — ${p.label_base}`, p.obrigatorias_base.pendentes);
+  }
+  document.getElementById("conteudoPendentes").innerHTML = html || "<p>Nenhuma obrigatória cadastrada para este curso.</p>";
   modalPend.classList.add("open");
 });
 document.getElementById("btnFecharPendentes").addEventListener("click", () => modalPend.classList.remove("open"));
@@ -665,16 +661,22 @@ document.getElementById("btnFecharPendentes").addEventListener("click", () => mo
 async function init() {
   restaurarEstadoLocal();
   try {
-    const [metaRes, ofertaRes, catRes, gradeRes] = await Promise.all([
+    const [metaRes, ofertaRes, catRes, gradeRes, cursosRes] = await Promise.all([
       fetch("./data/meta.json"),
       fetch("./data/oferta.json"),
       fetch("./data/catalogo.json"),
       fetch("./data/grade_bcc.json"),
+      fetch("./data/grades_cursos.json"),
     ]);
     metaDados = await metaRes.json();
-    const [oferta, catalogo, grade] = await Promise.all([ofertaRes.json(), catRes.json(), gradeRes.json()]);
-    motor = new MotorMatriculaWeb(oferta, catalogo, grade);
-    popularCursos(metaDados.cursos || motor.listarCursosDisponiveis());
+    const [oferta, catalogo, grade, gradesCursos] = await Promise.all([
+      ofertaRes.json(),
+      catRes.json(),
+      gradeRes.json(),
+      cursosRes.ok ? cursosRes.json() : Promise.resolve(null),
+    ]);
+    motor = new MotorMatriculaWeb(oferta, catalogo, grade, gradesCursos);
+    popularCursos(motor.listarCursosDisponiveis());
     atualizarTela();
   } catch (err) {
     document.getElementById("metaInfo").textContent = `Erro ao carregar dados: ${err.message}`;

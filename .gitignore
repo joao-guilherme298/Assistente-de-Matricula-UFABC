@@ -16,6 +16,7 @@ data/privado/
 # Cache de downloads grandes (baixados automaticamente da PROGRAD)
 data/publico/*.pdf
 data/publico/cache/
+data/publico/cursos_pdfs/
 
 # OS / IDE
 .DS_Store
