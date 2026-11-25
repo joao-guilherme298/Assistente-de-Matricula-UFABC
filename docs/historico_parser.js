@@ -90,12 +90,21 @@ export function sanitizarTextoHistorico(texto, nomesPorCodigo = new Map()) {
     }
     if (!nome || CPF_RE.test(nome)) nome = codigo;
 
+    const mCred = pos.match(/\b(\d{1,2})\s+(\d{2,3})\s+(\d{1,3})\b/);
+    const creditos = mCred ? parseInt(mCred[1], 10) : 0;
+    const ch_ext = mCred ? parseInt(mCred[3], 10) : 0;
+    const catMatch = linha.toUpperCase().match(/\b(OBR|OL|LIV|ATC)\b/);
+    const categoria_hist = catMatch ? catMatch[1] : "";
+
     adicionarItem(mapa, {
       codigo,
       nome,
       nome_norm: normalizarTexto(nome),
       status,
       conceito,
+      categoria_hist,
+      creditos,
+      ch_ext,
     });
   }
 
@@ -235,12 +244,30 @@ export async function sanitizarPdfHistoricoBrowser(file, nomesPorCodigo = new Ma
       if (codigo === "ENADE" || nome.toUpperCase().includes("ENADE")) continue;
       if (CPF_RE.test(nome)) nome = codigo;
 
+      // Extrair categoria (OBR/OL/LIV/ATC) e créditos / CH EXT da linha do SIGAA
+      const tokensLinha = linhaAtual.items.map((it) => it.str.trim());
+      const categoria_hist =
+        tokensLinha.find((s) => ["OBR", "OL", "LIV", "ATC"].includes(s.toUpperCase()))?.toUpperCase() || "";
+
+      // Padrão SIGAA: Cred. (1-2 dígitos), CH (2-3 dígitos), CH EXT (1-3 dígitos)
+      let creditos = 0;
+      let ch_ext = 0;
+      const linhaJunta = tokensLinha.join(" ");
+      const mNums = linhaJunta.match(/\b(\d{1,2})\s+(\d{2,3})\s+(\d{1,3})\b/);
+      if (mNums) {
+        creditos = parseInt(mNums[1], 10);
+        ch_ext = parseInt(mNums[3], 10);
+      }
+
       adicionarItem(mapa, {
         codigo,
         nome: nome || codigo,
         nome_norm: normalizarTexto(nome || codigo),
         status,
         conceito: "",
+        categoria_hist,
+        creditos,
+        ch_ext,
       });
     }
   }

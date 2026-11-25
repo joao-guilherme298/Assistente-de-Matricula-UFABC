@@ -200,12 +200,34 @@ def _parse_tabelas_sigaa(
                 if not status or (not codigo and not nome):
                     continue
 
+                # Categoria (col 1: OBR, OL, LIV, ATC)
+                categoria_hist = ""
+                if len(cells) > 1:
+                    cat_cand = re.sub(r"[^A-Z]", "", cells[1].upper())
+                    if cat_cand in ("OBR", "OL", "LIV", "ATC"):
+                        categoria_hist = cat_cand
+
+                # Créditos (col 4) e CH EXT (col 6)
+                creditos = 0
+                ch_ext = 0
+                if idx_cod != -1 and idx_cod + 2 < len(cells):
+                    c_str = re.sub(r"\D", "", cells[idx_cod + 2])
+                    if c_str:
+                        creditos = int(c_str)
+                if idx_cod != -1 and idx_cod + 4 < len(cells):
+                    ext_str = re.sub(r"\D", "", cells[idx_cod + 4])
+                    if ext_str:
+                        ch_ext = int(ext_str)
+
                 item = HistoricoItem(
                     codigo=codigo,
                     nome=nome or codigo,
                     nome_norm=normalizar_texto(nome or codigo),
                     status=status,
                     conceito=conceito,
+                    categoria_hist=categoria_hist,
+                    creditos=creditos,
+                    ch_ext=ch_ext,
                 )
                 _adicionar_item(itens_por_chave, item)
 

@@ -87,6 +87,9 @@ class HistoricoItem(BaseModel):
     nome_norm: str = ""
     status: Literal["aprovado", "em_curso", "equivalencia", "reprovado"] = "aprovado"
     conceito: str = ""
+    categoria_hist: str = ""  # OBR, OL, LIV, ATC
+    creditos: int = 0
+    ch_ext: int = 0
 
     def model_post_init(self, __context) -> None:
         if not self.nome_norm:

@@ -108,6 +108,28 @@ def exportar(atualizar_prograd: bool = False) -> None:
         for g in grade_raw
     ]
 
+    # Validação de sanidade (protege o GitHub Pages contra mudanças de layout nos PDFs da PROGRAD)
+    if len(turmas_raw) < 200:
+        raise SystemExit(
+            f"[ABORTADO] Poucas turmas extraídas ({len(turmas_raw)} < 200). "
+            "O layout do PDF da PROGRAD pode ter mudado — dados atuais preservados."
+        )
+    com_horario = sum(1 for t in turmas_raw if t.get("horarios"))
+    taxa_horario = com_horario / max(1, len(turmas_raw))
+    if taxa_horario < 0.75:
+        raise SystemExit(
+            f"[ABORTADO] Apenas {taxa_horario:.0%} das turmas têm horários parseados (< 75%). "
+            "Dados atuais preservados."
+        )
+    if len(cat_web) < 1000:
+        raise SystemExit(
+            f"[ABORTADO] Catálogo incompleto ({len(cat_web)} < 1000 disciplinas). Dados atuais preservados."
+        )
+    if len(grade_web) < 80:
+        raise SystemExit(
+            f"[ABORTADO] Grade BCC incompleta ({len(grade_web)} < 80 disciplinas). Dados atuais preservados."
+        )
+
     (DOCS_DATA / "oferta.json").write_text(
         json.dumps(turmas_raw, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )

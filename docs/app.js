@@ -492,6 +492,7 @@ document.getElementById("btnFecharSugerir").addEventListener("click", () => moda
 document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
   if (!motor) return;
   const container = document.getElementById("resultadoSugestoes");
+  const manterAtuais = document.getElementById("sugManterAtuais").checked;
   const sugs = motor.sugerirGrades({
     historico,
     contarEmCurso: document.getElementById("fContarEmCurso").checked,
@@ -504,6 +505,7 @@ document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
     maxCreditos: parseInt(document.getElementById("sugMaxCred").value, 10) || 20,
     maxDisciplinas: parseInt(document.getElementById("sugMaxDisc").value, 10) || 5,
     completarComLeves: document.getElementById("sugCompletarLeves").checked,
+    turmasFixas: manterAtuais ? [...selecionadas().values()] : [],
   });
 
   if (!sugs.length) {
@@ -530,7 +532,9 @@ document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
           .map(
             (t) =>
               `<li><strong>${t.disciplina}</strong> (${t.turma || t.turno}) ${
-                t.preenchimento_leve
+                t.fixa
+                  ? `<span class="badge rec-ok" style="font-size:0.68rem;">Mantida</span>`
+                  : t.preenchimento_leve
                   ? `<span class="badge cat-${t.categoria}" style="font-size:0.68rem;">Complemento leve</span>`
                   : ""
               } — ${t.creditos} créd. • ${t.horarios_raw}</li>`
@@ -646,6 +650,25 @@ document.getElementById("btnVerPendentes").addEventListener("click", () => {
   };
   const p = ultimoProgresso;
   let html = "";
+  if (p.tem_historico && p.creditos_historico) {
+    const ch = p.creditos_historico;
+    const m = p.metas_ppc;
+    const fmt = (val, meta, unit = "créd.") =>
+      meta ? `<strong>${val}</strong> / ${meta} ${unit}` : `<strong>${val}</strong> ${unit}`;
+    html += `
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;">
+        <div style="font-weight:700;margin-bottom:6px;">📊 Créditos contabilizados do seu histórico</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;font-size:0.82rem;color:var(--muted);">
+          <div>Obrigatórias (OBR): ${fmt(ch.obr, m?.obr)}</div>
+          <div>Opções Limitadas (OL): ${fmt(ch.ol, m?.ol)}</div>
+          <div>Livres (LIV): ${fmt(ch.liv, m?.liv)}</div>
+          <div>Extensão (CH EXT): ${fmt(ch.ch_ext, m?.ch_ext, "h")}</div>
+        </div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:6px;">
+          Total acumulado no histórico: <strong>${ch.total} créditos</strong>${m ? " • Metas exibidas: PPC BCC 2023" : ""}
+        </div>
+      </div>`;
+  }
   if (p.obrigatorias_curso.total > 0) {
     html += renderGrupo(`Obrigatórias — ${p.curso_sigla}`, p.obrigatorias_curso.pendentes);
   }

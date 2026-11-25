@@ -189,6 +189,7 @@ class SugerirGradeRequest(BaseModel):
     max_creditos: int = 20
     max_disciplinas: int = 5
     completar_com_leves: bool = False
+    turmas_fixas_ids: Optional[list[str]] = None
 
 
 @app.post("/api/sugerir-grade")
@@ -207,6 +208,7 @@ def sugerir_grade(req: SugerirGradeRequest) -> dict:
         max_creditos=req.max_creditos,
         max_disciplinas=req.max_disciplinas,
         completar_com_leves=req.completar_com_leves,
+        turmas_fixas_ids=req.turmas_fixas_ids,
     )
     return {"sugestoes": sugestoes}
 

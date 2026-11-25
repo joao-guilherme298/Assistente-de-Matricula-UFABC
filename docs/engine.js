@@ -418,6 +418,29 @@ export class MotorMatriculaWeb {
       if (this._disciplinaCumprida(g.codigo, g.nome_norm, idxHist)) olFeitas++;
     }
 
+    // Somar créditos reais e CH de Extensão do histórico (por categoria OBR / OL / LIV / ATC)
+    const creditosHist = { total: 0, obr: 0, ol: 0, liv: 0, atc: 0, ch_ext: 0 };
+    if (historico && historico.disciplinas) {
+      const validos = new Set(["aprovado", "equivalencia"]);
+      if (contarEmCurso) validos.add("em_curso");
+      for (const item of historico.disciplinas) {
+        if (!validos.has(item.status)) continue;
+        let cred = item.creditos || 0;
+        if (!cred) {
+          const catInfo = this.buscarCatalogo(item.codigo, item.nome_norm || normalizarTexto(item.nome));
+          if (catInfo) cred = catInfo.creditos || 0;
+        }
+        const chExt = item.ch_ext || 0;
+        creditosHist.total += cred;
+        creditosHist.ch_ext += chExt;
+        const chCat = (item.categoria_hist || "").toUpperCase();
+        if (chCat === "OBR") creditosHist.obr += cred;
+        else if (chCat === "OL") creditosHist.ol += cred;
+        else if (chCat === "LIV") creditosHist.liv += cred;
+        else if (chCat === "ATC") creditosHist.atc += cred;
+      }
+    }
+
     return {
       curso_sigla: cfg.sigla,
       eh_ingresso: cfg.ehIngresso,
@@ -427,6 +450,11 @@ export class MotorMatriculaWeb {
       obrigatorias_curso: obrigCurso,
       obrigatorias_base: obrigBase,
       opcoes_limitadas: { feitas: olFeitas, total_rol: cfg.idxOl.itens.length },
+      creditos_historico: creditosHist,
+      metas_ppc:
+        cfg.curso === "BACHARELADO EM CIÊNCIA DA COMPUTAÇÃO"
+          ? { obr: 204, ol: 24, liv: 12, ch_ext: 320 }
+          : null,
     };
   }
 
@@ -442,6 +470,7 @@ export class MotorMatriculaWeb {
     maxCreditos = 20,
     maxDisciplinas = 5,
     completarComLeves = false,
+    turmasFixas = [],
     limiteSugestoes = 3,
   } = {}) {
     const candidatas = this.analisarOferta({
@@ -456,6 +485,10 @@ export class MotorMatriculaWeb {
       diasPermitidos,
     });
 
+    const fixasList = (turmasFixas || []).map((t) => ({ ...t, fixa: true }));
+    const chavesFixas = new Set(fixasList.map((t) => t.codigo || normalizarTexto(t.disciplina)));
+    const credsFixos = fixasList.reduce((acc, t) => acc + (t.creditos || 0), 0);
+
     const pesoCat = { obrigatoria_bcc: 100, obrigatoria_bct: 80, opcao_limitada: 45, livre: 15 };
     const pesoRec = { sem_recomendacao: 15, ok: 15, parcial: 3, desconhecido: 5, pendente: -20 };
 
@@ -463,6 +496,7 @@ export class MotorMatriculaWeb {
     for (const c of candidatas) {
       if (!c.horarios || !c.horarios.length || c.creditos <= 0) continue;
       const chave = c.codigo || c.disciplina_norm;
+      if (chavesFixas.has(chave)) continue;
       if (!porDisc.has(chave)) porDisc.set(chave, []);
       porDisc.get(chave).push(c);
     }
@@ -523,11 +557,11 @@ export class MotorMatriculaWeb {
       backtrack(idx + 1, escolhidas, creds, scoreAtual);
     };
 
-    backtrack(0, [], 0, 0);
+    backtrack(0, [...fixasList], credsFixos, 0);
     if (!melhores.length && minCredAlvo > 1) {
       passos = 0;
       minCredAlvo = 1;
-      backtrack(0, [], 0, 0);
+      backtrack(0, [...fixasList], credsFixos, 0);
     }
 
     melhores.sort((a, b) => b.score - a.score);

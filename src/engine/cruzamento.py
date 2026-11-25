@@ -423,10 +423,12 @@ class MotorMatricula:
         max_creditos: int = 20,
         max_disciplinas: int = 5,
         completar_com_leves: bool = False,
+        turmas_fixas_ids: Optional[list[str]] = None,
         limite_sugestoes: int = 3,
     ) -> list[dict[str, Any]]:
         """Gera até N sugestões de grade sem conflito priorizando obrigatórias e destravamento.
 
+        Se turmas_fixas_ids for informado, mantém essas turmas fixas e completa o restante.
         Se completar_com_leves=True, preenche os créditos restantes até max_creditos
         com Opções Limitadas ou Livres sem recomendações (mais tranquilas).
         """
@@ -441,6 +443,30 @@ class MotorMatricula:
             apenas_recomendacoes_ok=apenas_recomendacoes_ok,
             dias_permitidos=dias_permitidos,
         )
+
+        # Resolver turmas fixas (caso o usuário queira manter o que já escolheu no plano atual)
+        por_id_obj = {t.id: t for t in self.turmas}
+        fixas_dicts: list[dict[str, Any]] = []
+        chaves_fixas: set[str] = set()
+        if turmas_fixas_ids:
+            todas_sem_filtro = {
+                x["id"]: x
+                for x in self.analisar_oferta(
+                    historico=historico,
+                    contar_em_curso=contar_em_curso,
+                    curso=curso,
+                    campus="Todos",
+                    turno="Todos",
+                    categoria="Todas",
+                    ocultar_cursadas=False,
+                    apenas_recomendacoes_ok=False,
+                )
+            }
+            for fid in turmas_fixas_ids:
+                if fid in todas_sem_filtro:
+                    fd = todas_sem_filtro[fid]
+                    fixas_dicts.append(fd)
+                    chaves_fixas.add(fd["codigo"] or normalizar_texto(fd["disciplina"]))
 
         # Agrupar por disciplina (mantendo até 3 turmas com horários distintos por disciplina)
         grupos: list[tuple[float, str, list[dict[str, Any]]]] = []
@@ -457,6 +483,8 @@ class MotorMatricula:
             if not c["horarios"] or c["creditos"] <= 0:
                 continue
             chave = c["codigo"] or normalizar_texto(c["disciplina"])
+            if chave in chaves_fixas:
+                continue
             por_disc.setdefault(chave, []).append(c)
 
         for chave, lista_t in por_disc.items():
@@ -482,7 +510,7 @@ class MotorMatricula:
         grupos.sort(key=lambda g: g[0], reverse=True)
         grupos = grupos[:18]
 
-        por_id_obj = {t.id: t for t in self.turmas}
+        creds_fixos = sum(f["creditos"] for f in fixas_dicts)
         melhores: list[tuple[float, list[dict[str, Any]]]] = []
         conjuntos_vistos: set[frozenset[str]] = set()
         passos = 0
@@ -528,13 +556,13 @@ class MotorMatricula:
             # Ramo 2: pular este grupo
             backtrack(idx + 1, escolhidas, creds, score_atual)
 
-        backtrack(0, [], 0, 0.0)
+        backtrack(0, list(fixas_dicts), creds_fixos, 0.0)
 
         # Fallback: se nada atingiu min_creditos, tentar com min_creditos = 1
         if not melhores and min_creditos > 1:
             passos = 0
             min_creditos = 1
-            backtrack(0, [], 0, 0.0)
+            backtrack(0, list(fixas_dicts), creds_fixos, 0.0)
 
         melhores.sort(key=lambda x: x[0], reverse=True)
 

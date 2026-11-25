@@ -69,7 +69,10 @@ def test_parse_tabelas_sigaa_codigos_quebrados():
     itens = _parse_tabelas_sigaa(FakePDF())
     assert "ENADE" not in itens
     assert itens["BCJ0204-15"].status == "equivalencia"
+    assert itens["BCJ0204-15"].categoria_hist == "OBR"
+    assert itens["BCJ0204-15"].creditos == 5
     assert itens["BCL0306-15"].status == "aprovado"
+    assert itens["BCL0306-15"].creditos == 3
     assert itens["IFSP-ELES3"].status == "equivalencia"
     assert itens["MCCC007-23"].status == "reprovado"
     assert itens["BCN0407-15"].status == "aprovado"
@@ -216,3 +219,22 @@ def test_api_endpoints_basicos():
         info = r_info.json()
         assert info["encontrada"] is True
         assert len(info["ementa"]) > 20
+
+        # Testar sugestão mantendo uma turma fixa já selecionada
+        fixa_id = payload["turmas"][0]["id"]
+        r_fix = client.post(
+            "/api/sugerir-grade",
+            json={
+                "campus": "Santo André",
+                "turno": "Matutino",
+                "apenas_recomendacoes_ok": False,
+                "min_creditos": 8,
+                "max_creditos": 20,
+                "max_disciplinas": 5,
+                "turmas_fixas_ids": [fixa_id],
+            },
+        )
+        assert r_fix.status_code == 200
+        sugs_fix = r_fix.json()["sugestoes"]
+        assert len(sugs_fix) >= 1
+        assert any(t["id"] == fixa_id for t in sugs_fix[0]["turmas"])
