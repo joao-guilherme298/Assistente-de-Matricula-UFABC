@@ -94,7 +94,7 @@ export function exportarGradeICS(turmas, planoNome = "A") {
       linhas.push(`SUMMARY:${escaparICS(`${t.disciplina} (${tipoLabel}${qLabel})`)}`);
       linhas.push(`LOCATION:${escaparICS(`UFABC - ${t.campus}`)}`);
       linhas.push(
-        `DESCRIPTION:${escaparICS(`Turma: ${t.id}\\nTPEI: ${t.tpi || "-"}\\nDocente(s): ${docentes}`)}`
+        `DESCRIPTION:${escaparICS(`Turma: ${t.id}\nTPEI: ${t.tpi || "-"}\nDocente(s): ${docentes}`)}`
       );
       linhas.push("END:VEVENT");
     });

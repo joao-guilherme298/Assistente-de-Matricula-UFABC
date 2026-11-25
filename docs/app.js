@@ -47,6 +47,15 @@ function chaveDisciplina(t) {
   return t.codigo || t.disciplina;
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function toast(msg) {
   const el = document.getElementById("toast");
   el.textContent = msg;
@@ -167,13 +176,20 @@ function atualizarTela() {
   const curso = cursoAtual();
   localStorage.setItem("ufabc_web_curso_v1", curso);
 
+  // Evitar filtro de categoria "obrigatoria_bcc" preso ao trocar para curso de ingresso (BC&T, BC&H, LCNE, LCH)
+  const selCat = document.getElementById("fCategoria");
+  const cfg = motor.obterConfigCurso(curso);
+  if (cfg.ehIngresso && selCat.value === "obrigatoria_bcc") {
+    selCat.value = "Todas";
+  }
+
   turmasVisiveis = motor.analisarOferta({
     historico,
     contarEmCurso,
     curso,
     campus: document.getElementById("fCampus").value,
     turno: document.getElementById("fTurno").value,
-    categoria: document.getElementById("fCategoria").value,
+    categoria: selCat.value,
     ocultarCursadas: document.getElementById("fOcultarCursadas").checked,
     apenasRecomendacoesOk: document.getElementById("fApenasRecOk").checked,
     diasPermitidos: [...diasAtivos],
@@ -513,6 +529,18 @@ document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
   if (!motor) return;
   const container = document.getElementById("resultadoSugestoes");
   const manterAtuais = document.getElementById("sugManterAtuais").checked;
+  const turmasFixas = manterAtuais ? [...selecionadas().values()] : [];
+  let minCreditos = Math.max(1, parseInt(document.getElementById("sugMinCred").value, 10) || 12);
+  let maxCreditos = Math.max(1, parseInt(document.getElementById("sugMaxCred").value, 10) || 20);
+  let maxDisciplinas = Math.max(1, parseInt(document.getElementById("sugMaxDisc").value, 10) || 5);
+  if (minCreditos > maxCreditos) minCreditos = maxCreditos;
+
+  const credsFixos = turmasFixas.reduce((acc, t) => acc + (t.creditos || 0), 0);
+  if (turmasFixas.length > maxDisciplinas || credsFixos > maxCreditos) {
+    container.innerHTML = `<div style="font-size:0.82rem;color:#fca5a5;">Seu Plano ${planoAtual} já tem ${turmasFixas.length} matérias (${credsFixos} créditos), acima do limite escolhido. Aumente o máximo de créditos/matérias ou desmarque "Manter matérias já selecionadas".</div>`;
+    return;
+  }
+
   const sugs = motor.sugerirGrades({
     historico,
     contarEmCurso: document.getElementById("fContarEmCurso").checked,
@@ -521,11 +549,11 @@ document.getElementById("btnGerarSugestoes").addEventListener("click", () => {
     turno: document.getElementById("fTurno").value,
     diasPermitidos: [...diasAtivos],
     apenasRecomendacoesOk: document.getElementById("sugSoRecOk").checked,
-    minCreditos: parseInt(document.getElementById("sugMinCred").value, 10) || 12,
-    maxCreditos: parseInt(document.getElementById("sugMaxCred").value, 10) || 20,
-    maxDisciplinas: parseInt(document.getElementById("sugMaxDisc").value, 10) || 5,
+    minCreditos,
+    maxCreditos,
+    maxDisciplinas,
     completarComLeves: document.getElementById("sugCompletarLeves").checked,
-    turmasFixas: manterAtuais ? [...selecionadas().values()] : [],
+    turmasFixas,
   });
 
   if (!sugs.length) {
@@ -632,13 +660,13 @@ function abrirModalEmenta(turma) {
 
   const partes = [];
   if (cat && cat.recomendacoes && cat.recomendacoes.length) {
-    partes.push(`<div><strong>Recomendações:</strong><p style="color:var(--muted);margin-top:4px;">${cat.recomendacoes.join("; ")}</p></div>`);
+    partes.push(`<div><strong>Recomendações:</strong><p style="color:var(--muted);margin-top:4px;">${escapeHtml(cat.recomendacoes.join("; "))}</p></div>`);
   }
   if (cat && cat.objetivos) {
-    partes.push(`<div><strong>Objetivos:</strong><p style="color:var(--muted);margin-top:4px;">${cat.objetivos}</p></div>`);
+    partes.push(`<div><strong>Objetivos:</strong><p style="color:var(--muted);margin-top:4px;">${escapeHtml(cat.objetivos)}</p></div>`);
   }
   if (cat && cat.ementa) {
-    partes.push(`<div><strong>Ementa:</strong><p style="color:var(--muted);margin-top:4px;">${cat.ementa}</p></div>`);
+    partes.push(`<div><strong>Ementa:</strong><p style="color:var(--muted);margin-top:4px;">${escapeHtml(cat.ementa)}</p></div>`);
   }
   if (!partes.length) {
     partes.push(`<p style="color:var(--muted);">Ementa não encontrada no Catálogo 2025–2026 para esta disciplina.</p>`);
@@ -646,6 +674,18 @@ function abrirModalEmenta(turma) {
   document.getElementById("ementaConteudo").innerHTML = partes.join("");
   modalEmenta.classList.add("open");
 }
+
+// Fechar qualquer modal ao clicar fora (backdrop) ou pressionar ESC
+document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+  backdrop.addEventListener("click", (ev) => {
+    if (ev.target === backdrop) backdrop.classList.remove("open");
+  });
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") {
+    document.querySelectorAll(".modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+  }
+});
 
 // Modal Obrigatórias Pendentes
 const modalPend = document.getElementById("modalPendentes");

@@ -188,6 +188,18 @@ button {
   .main-grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 640px) {
+  header { padding: 12px 14px; }
+  .container { padding: 12px 12px 32px; }
+  .brand h1 { font-size: 1.08rem; }
+  .field, .field select, .field input[type="text"] { width: 100%; max-width: none !important; }
+  .dias-pills { flex-wrap: wrap; }
+  .turmas-list { max-height: 60vh; }
+  .turma-row { flex-direction: column; align-items: stretch; }
+  .turma-row button { align-self: flex-end; }
+  .panel-header { flex-direction: column; align-items: flex-start; }
+}
+
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);

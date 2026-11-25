@@ -104,6 +104,8 @@ export class MotorMatriculaWeb {
   _resolverNomeCodigo(cod) {
     const cat = this.buscarCatalogo(cod, "");
     if (cat) return cat.nome;
+    const gb = this.gradeBcc.find((g) => g.codigo === cod || baseCodigo(g.codigo) === baseCodigo(cod));
+    if (gb) return gb.nome;
     const t = this.turmas.find((x) => x.codigo === cod || baseCodigo(x.codigo) === baseCodigo(cod));
     return t ? t.disciplina : cod;
   }
