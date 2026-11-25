@@ -23,6 +23,32 @@ DOCS_DATA = BASE_DIR / "docs" / "data"
 
 CODIGO_RE = re.compile(r"\b([A-Z]{2,5}\d{3,4}-\d{2})\b")
 
+# Lista oficial das 22 obrigatórias do BC&H (PPC 2022, p. 24 — tabela em imagem no PDF)
+BCH_OBRIGATORIAS_OFICIAIS: list[str] = [
+    "BHO0101-15",  # Estado e Relações de Poder
+    "BIQ0602-15",  # Estrutura e Dinâmica Social
+    "BHO1102-19",  # Introdução à Economia
+    "BHO0002-19",  # Introdução ao Pensamento Econômico
+    "BHP0001-15",  # Ética e Justiça
+    "BHP0202-15",  # Pensamento Crítico
+    "BHP0202-19",  # Temas e Problemas em Filosofia
+    "BHQ0004-19",  # Estudos de Gênero
+    "BHQ0002-15",  # Estudos Étnico-Raciais
+    "BHO1335-15",  # Formação do Sistema Internacional
+    "BHQ0001-15",  # Identidade e Cultura
+    "BHQ0003-15",  # Interpretações do Brasil
+    "BHQ0301-15",  # Território e Sociedade
+    "BIR0603-15",  # Ciência, Tecnologia e Sociedade
+    "BHO0102-15",  # Desenvolvimento e Sustentabilidade
+    "BIR0004-15",  # Bases Epistemológicas da Ciência Moderna
+    "BHO0001-19",  # Introdução às Humanidades e às Ciências Sociais
+    "BHS0005-19",  # Práticas em Ciências e Humanidades
+    "BCL0306-15",  # Biodiversidade: Interações entre organismos e ambiente
+    "BIS0005-15",  # Bases Computacionais da Ciência
+    "BIS0003-15",  # Bases Matemáticas
+    "BIN0406-15",  # Introdução à Probabilidade e à Estatística
+]
+
 # Mapa oficial: nome exato (igual oferta.json) -> (slug/url prograd, tipo_base, sigla_curta)
 CURSOS_OFICIAIS: list[tuple[str, str, str, str]] = [
     # Cursos de Ingresso (Interdisciplinares)
@@ -310,7 +336,7 @@ def main(offline: bool = False) -> None:
     bcc_obrig = [g.codigo for g in grade_bcc_list if g.categoria == "obrigatoria_bcc" and g.codigo]
     bcc_ol = [g.codigo for g in grade_bcc_list if g.categoria == "opcao_limitada" and g.codigo]
 
-    bases: dict[str, list[str]] = {"bct": bct_exatas, "bch": [], "lcne": [], "lch": []}
+    bases: dict[str, list[str]] = {"bct": bct_exatas, "bch": BCH_OBRIGATORIAS_OFICIAIS, "lcne": [], "lch": []}
     resultado: dict[str, dict] = {}
 
     # Extrair obrigatórias das 8 Engenharias do PPC consolidado 2023
@@ -348,6 +374,20 @@ def main(offline: bool = False) -> None:
                     "opcoes_limitadas": [],
                 }
                 print(f"[OK-EXATO] {sigla:22s} | obrig: {len(bct_exatas):2d} | ol:   0")
+                continue
+
+            if nome_curso == "BACHARELADO EM CIÊNCIAS E HUMANIDADES":
+                ol_pdf = CURSOS_PDF_DIR / f"{slug}_ol.pdf"
+                ol_cods = _extrair_codigos_pdf_simples(ol_pdf, codigos_validos) if ol_pdf.exists() else []
+                ol_cods = [c for c in ol_cods if c not in set(BCH_OBRIGATORIAS_OFICIAIS)]
+                resultado[nome_curso] = {
+                    "sigla": sigla,
+                    "tipo_base": "nenhum",
+                    "tem_ppc": True,
+                    "obrigatorias": BCH_OBRIGATORIAS_OFICIAIS,
+                    "opcoes_limitadas": ol_cods,
+                }
+                print(f"[OK-EXATO] {sigla:22s} | obrig: {len(BCH_OBRIGATORIAS_OFICIAIS):2d} | ol: {len(ol_cods):3d}")
                 continue
 
             try:
