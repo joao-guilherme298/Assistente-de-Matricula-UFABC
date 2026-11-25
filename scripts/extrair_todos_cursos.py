@@ -432,6 +432,15 @@ def main(offline: bool = False) -> None:
 
                 if nome_curso in eng_obrig_map and eng_obrig_map[nome_curso]:
                     obrig_cods = [c for c in eng_obrig_map[nome_curso] if c not in set(ol_cods)]
+                elif slug == "bq" and ppc_pdf.exists():
+                    # Química: tabela de obrigatórias nas páginas 41–43
+                    obrig_cods = _extrair_codigos_paginas(ppc_pdf, [41, 42, 43], excluir_comum)
+                elif slug == "bcd" and ppc_pdf.exists():
+                    # Ciência de Dados: seção 17 Rol de Disciplinas (páginas 65–67)
+                    obrig_cods = _extrair_codigos_paginas(ppc_pdf, [65, 66, 67], excluir_comum)
+                elif slug == "bri" and ppc_pdf.exists():
+                    # Relações Internacionais: seção 18 Rol de Disciplinas (páginas 62–63)
+                    obrig_cods = _extrair_codigos_paginas(ppc_pdf, [62, 63], excluir_comum)
                 elif slug == "bm" and ppc_pdf.exists():
                     # Matemática: tabela de obrigatórias nas páginas 28–30
                     obrig_cods = _extrair_codigos_paginas(ppc_pdf, [28, 29, 30], excluir_comum)
